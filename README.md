@@ -14,13 +14,9 @@ For shared tables that have the same structure:
         * copy across rows that are on master but not on slave.
 
 ## Features
-* This tool uses multiprocessing with blocking MySQL queries.
-* This tool uses startup queries to allow syncing WITHOUT perforing foreign key checks.
-* This tool uses a third database to reduce memory requirements without significantly impacting performance.
-* This tool uses an array list of regular expressions to ignore certain tables.
-* One can specify in the settings.php file whether tables are extremely large and should be considered as paritioned. One specifies the name of the table and the column id that a table should be partitioned by. The partitions will be synced as if they were separate tables (e.g. taking the hash of the table and then taking row hashes if the "table hash" is different between master and slave.) A rule of thumb might be that any table over 1 million rows should be considered partitioned.
-
-## Release Notes
-
-### 1.2.5
-* Fixed an issue whereby tables would always be considered having a different structure if constraints were added to the master over time and thus not in alphabetical order. MySQL would always have these in alphabetical order if you were to use that string to create the table.
+* Uses multiprocessing to make use of all your cores.
+* Startup queries allow syncing WITHOUT perforing foreign key checks.
+* Uses a database to find differences rather than storing hashes in memory, reducing memory requirements without significantly impacting performance.
+* Use an array list of regular expressions to ignore certain tables.
+* For extremely large tables, one can specify a column that the table should be considered as paritioned by. 
+   * One specifies the name of the table and the column id that a table should be partitioned by. The partitions will be synced as if they were separate tables (e.g. taking the hash of the table and then taking row hashes if the "table hash" is different between master and slave.) A rule of thumb might be that any table over 1 million rows should be considered partitioned.
