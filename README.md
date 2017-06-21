@@ -16,14 +16,16 @@ This tool syncs two databases with the following high-level logic:
                 
 If you need to ignore certain tables, you can specify this in the settings file so that they aren't touched.
 
-Because this just uses applicaition-layer logic, you can use this tool to easily create an external backup of your [RDS](https://aws.amazon.com/rds/) instance.
-
-
+## Benefits
+* Just uses application logic
+    * Can easily create an external backup of your [RDS](https://aws.amazon.com/rds/) instance.
+    * Doesn't require system host access.
+* Doesn't require any downtime or lock up your tables.
+* Iterative - Only differences require syncing so can be pretty quick if you run more frequently.
 
 
 ## Features
 * Uses multiprocessing to make use of all your cores.
-* Bandwidth efficient as only differences are synced across.
 * Startup queries allow syncing WITHOUT perforing foreign key checks.
 * Uses a database to find differences rather than storing hashes in memory, reducing memory requirements without significantly impacting performance.
 * Use an array list of regular expressions to ignore certain tables.
