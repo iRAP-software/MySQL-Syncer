@@ -1,17 +1,20 @@
 DB Sync Tool
 ============
-This tool syncs two databases.
+This tool syncs two databases with the following high-level logic:
 
-Finds missing tables and straight copies them across.
-Finds excess slave tables and deletes them from the slave.
-For tables that exist on both, check structure, if different delete slave and copy across.
-For shared tables that have the same structure:
-* Fetch the table hash
-    * if same do nothing (already synced)
-    * if different:
-        * fetch the row hashes for each table (stored in separate database so *not* memory intensive)
-        * delete excess hashes/rows on slave
-        * copy across rows that are on master but not on slave.
+* Copy across tables to the slave that don't exist.
+* Delete tables from slave that dont exist on master.
+* For tables that exist on both master and slave, check the table structure
+    * If the structure is different, delete slave table and copy master across.
+    * If the structure is the same:
+        * Fetch the table hash
+            * if same do nothing (already synced)
+            * if different:
+                * fetch the row hashes for each table (stored in separate database so *not* memory intensive)
+                * delete excess hashes/rows on slave
+                * copy across rows that are on master but not on slave.
+                
+If you need to ignore certain tables, you can specify this in the settings file so that they aren't touched.
 
 ## Features
 * Uses multiprocessing to make use of all your cores.
