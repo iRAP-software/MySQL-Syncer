@@ -1,0 +1,7 @@
+{
+    "require": {
+        "irap/core-libs": "1.1.*",
+        "irap/multi-query": "1.0.*",
+        "irap/autoloader": "^1.0"
+    }
+}

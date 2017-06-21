@@ -1,0 +1,61 @@
+<?php
+
+# CURRENT LIVE DATABASE
+define('MASTER_DB_NAME', "");
+define('MASTER_DB_HOST', "");
+define('MASTER_DB_USER', "");
+define('MASTER_DB_PASSWORD', "");
+define('MASTER_DB_PORT', 3306);
+
+# local dev database
+define('SLAVE_DB_NAME', "");
+define('SLAVE_DB_HOST', "");
+define('SLAVE_DB_USER', "");
+define('SLAVE_DB_PASSWORD', "");
+define('SLAVE_DB_PORT', 3306);
+
+# sync database (for helping this tool). 
+define('SYNC_DB_NAME', "");
+define('SYNC_DB_HOST', "");
+define('SYNC_DB_USER', "");
+define('SYNC_DB_PASSWORD', "");
+define('SYNC_DB_PORT', 3306);
+
+
+# Set this to true if you want to log the changes that take place.
+# e.g. all table drops/inserts/deletions etc.
+define('LOG_QUERIES', false);
+
+# specify the file location where we want to log queries
+define('LOG_QUERY_FILE', __DIR__ . '/queries.sql');
+
+# Define the number of rows we wish to sync at a time. This prevents issues arising from trying
+# to sync massive tables and running out of memory, or hitting the MAX_PACKET_SIZE limit on your db.
+define('CHUNK_SIZE', 5000);
+
+
+# Set this to true if you want to allow java to run each of the commands in a thread pool.
+# This is optimal if you have multiple cores.
+define('USE_MULTI_PROCESSING', true);
+
+
+# Tables that do not have a primary key cannot be synced.
+# If this is set to true, then those tables will just be completely replaced (fully copy)
+# if set to false, this will just skip those tables.
+define('COPY_TABLES_WITH_NO_PRIMARY', true);
+
+
+# Specify regexp list of tables that we should ignore syncing. They won't be removed, updated, or
+# added to either database.
+define('IGNORE_TABLES', array(
+    '^my_table$', // exact match of table "my_table"
+    '^data-.*$', // all tables beginning with data-
+));
+
+// One to one relationship of table name to the name of the column it uses as a "partition" or grouping.
+// These tables will be synced in parts based on the unique values of the partition. E.g. if you have
+// 5 different partition values in your table, then that table will be synced in 5 stages.
+// we do not use regular expresssions here because having overlaps is too risky.
+define('PARTITIONED_TABLE_DEFINITIONS', array(
+    'myTableName'  => 'a_non_unique_int_index',
+));
