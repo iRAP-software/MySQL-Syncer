@@ -20,8 +20,10 @@ Because this just uses applicaition-layer logic, you can use this tool to easily
 
 
 
+
 ## Features
 * Uses multiprocessing to make use of all your cores.
+* Bandwidth efficient as only differences are synced across.
 * Startup queries allow syncing WITHOUT perforing foreign key checks.
 * Uses a database to find differences rather than storing hashes in memory, reducing memory requirements without significantly impacting performance.
 * Use an array list of regular expressions to ignore certain tables.
