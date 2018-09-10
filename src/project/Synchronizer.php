@@ -111,11 +111,11 @@ class Synchronizer
     
     /**
      * Helper function that will generate the commands for syncing partitioned tables.
-     * @param array $partitionedTables
-     * @return string
+     * @param array $partitionedTables - list of table names to generate commands for.
+     * @return array - list of commands to run to sync the partitioned tables.
      * @throws Exception
      */
-    private function getCommandsForPartitionedTables(array $partitionedTables)
+    private function getCommandsForPartitionedTables(array $partitionedTables) : array
     {
         $commands = array();
         
@@ -127,47 +127,58 @@ class Synchronizer
                 throw new Exception("Failed to fetch partition column name for $partitionedTableName");
             }
             
-            $partitionColumnName = PARTITIONED_TABLE_DEFINITIONS[$partitionedTableName];
-            $selectPartitionsQuery = "SELECT DISTINCT(`$partitionColumnName`) FROM `$partitionedTableName`";
-            $masterResult = $this->m_master->run_query($selectPartitionsQuery);
-            $slaveResult = $this->m_slave->run_query($selectPartitionsQuery);
-            
-            if ($masterResult === false || $slaveResult === false)
+            // first check structure is the same. 
+            // If not sync whole table, if it is, sync the partitions.
+            if ($this->isTableStructureTheSame($partitionedTableName) === FALSE)
             {
-                throw new Exception("Failed to select partition values for $partitionedTableName: $selectPartitionsQuery");
+                $commands[] = "/usr/bin/php " . __DIR__ . "/sync_table.php {$partitionedTableName} || true";
             }
-            
-            $masterPartitions = array();
-            $slavePartitions = array();
-            while(($row = $masterResult->fetch_assoc()) !== null)
+            else
             {
-                $masterPartitions[] = $row[$partitionColumnName];
-            }
-            
-            while(($row = $slaveResult->fetch_assoc()) !== null)
-            {
-                $slavePartitions[] = $row[$partitionColumnName];
-            }
-            
-            $excessPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($slavePartitions, $masterPartitions);
-            $missingPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($masterPartitions, $slavePartitions);
-            
-            foreach ($masterPartitions as $partitionValue)
-            {
-                $commands[] = "/usr/bin/php " . __DIR__ . "/sync_table_partition.php $partitionedTableName $partitionColumnName '$partitionValue' || true";
-            }
-            
-            foreach ($excessPartitions as $excessPartitionValue)
-            {
-                print "$partitionedTableName: deleting excess partition {$excessPartitionValue}" . PHP_EOL;
+                // structure is same, sync partitions.
+                $partitionColumnName = PARTITIONED_TABLE_DEFINITIONS[$partitionedTableName];
+                $selectPartitionsQuery = "SELECT DISTINCT(`$partitionColumnName`) FROM `$partitionedTableName`";
+                $masterResult = $this->m_master->run_query($selectPartitionsQuery);
+                $slaveResult = $this->m_slave->run_query($selectPartitionsQuery);
                 
-                $query = "DELETE FROM `$partitionedTableName` WHERE `$partitionColumnName`='$excessPartitionValue'";
-                print "query: $query \n";
-                $result = $this->m_slave->run_query($query);
-                
-                if ($result === FALSE)
+                if ($masterResult === false || $slaveResult === false)
                 {
-                    throw new Exception("Failed to delete excess partition {$excessPartitionValue} on slave");
+                    throw new Exception("Failed to select partition values for $partitionedTableName: $selectPartitionsQuery");
+                }
+                
+                $masterPartitions = array();
+                $slavePartitions = array();
+                while(($row = $masterResult->fetch_assoc()) !== null)
+                {
+                    $masterPartitions[] = $row[$partitionColumnName];
+                }
+                
+                while(($row = $slaveResult->fetch_assoc()) !== null)
+                {
+                    $slavePartitions[] = $row[$partitionColumnName];
+                }
+                
+                $excessPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($slavePartitions, $masterPartitions);
+                $missingPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($masterPartitions, $slavePartitions);
+                
+                foreach ($masterPartitions as $partitionValue)
+                {
+                    $commands[] = 
+                        "/usr/bin/php " . __DIR__ . "/sync_table_partition.php " .
+                        "$partitionedTableName $partitionColumnName '$partitionValue' || true";
+                }
+                
+                foreach ($excessPartitions as $excessPartitionValue)
+                {
+                    print "$partitionedTableName: deleting excess partition {$excessPartitionValue}" . PHP_EOL;
+                    $query = "DELETE FROM `{$partitionedTableName}` WHERE `{$partitionColumnName}`='{$excessPartitionValue}'";
+                    print "query: $query \n";
+                    $result = $this->m_slave->run_query($query);
+                    
+                    if ($result === FALSE)
+                    {
+                        throw new Exception("Failed to delete excess partition {$excessPartitionValue} on slave");
+                    }
                 }
             }
         }
@@ -413,14 +424,27 @@ class Synchronizer
      * @param TableConnection $slave_table - the table we are syncing to (destination)
      * @return void.
      */
-    private function sync_table_partition_data(TableConnection $master_table, TableConnection $slave_table, $partitionColumn, $partitionColumnValue)
-    {
+    private function sync_table_partition_data(
+        TableConnection $master_table, 
+        TableConnection $slave_table, 
+        $partitionColumn, 
+        $partitionColumnValue
+    ) {
         print "fetching master table hash map..." . PHP_EOL;
-        $master_table->fetch_partition_hash_map($master_table->get_table_name(), TRUE, $partitionColumn, $partitionColumnValue);
-        print "fetching slave table hash map..." . PHP_EOL;
-        $slave_table->fetch_partition_hash_map($master_table->get_table_name(), FALSE, $partitionColumn, $partitionColumnValue);
+        $master_table->fetch_partition_hash_map(
+            $master_table->get_table_name(), 
+            TRUE, 
+            $partitionColumn, 
+            $partitionColumnValue
+        );
         
-    
+        print "fetching slave table hash map..." . PHP_EOL;
+        $slave_table->fetch_partition_hash_map(
+            $master_table->get_table_name(), 
+            FALSE, 
+            $partitionColumn, 
+            $partitionColumnValue
+        );
         
         $this->delete_excess_rows($slave_table, $partitionColumnValue);
         $this->sync_missing_rows($master_table, $slave_table, $partitionColumnValue);
@@ -453,8 +477,11 @@ class Synchronizer
      *                                syncing missing rows for the specified partition value.
      * @throws Exception
      */
-    private function sync_missing_rows(TableConnection $masterTable, TableConnection $slaveTable, $partitionValue = null)
-    {
+    private function sync_missing_rows(
+        TableConnection $masterTable, 
+        TableConnection $slaveTable, 
+        $partitionValue = null
+    ) {
         print "Finding rows missng from slave.";
         
         $syncDb = SiteSpecific::getSyncDb();
@@ -490,7 +517,8 @@ class Synchronizer
         
         if ($result === FALSE)
         {
-            throw new Exception("Failed to select primary keys in master that arent in slave. " . $syncDb->error);
+            $msg = "Failed to select primary keys in master that arent in slave. " . $syncDb->error;
+            throw new Exception($msg);
         }
         
         # Add missing rows
@@ -639,8 +667,8 @@ class Synchronizer
     
     
     /**
-     * Same as array_diff except this returns the indexes of the values that are in array1 that are not in array2
-     * (compares values, but returns the indexes)
+     * Same as array_diff except this returns the indexes of the values that are in array1 that 
+     * are not in array2 (compares values, but returns the indexes)
      * @param type $array1
      * @param type $array2
      */
@@ -753,5 +781,26 @@ class Synchronizer
         }
         
         return $values;
+    }
+    
+    
+    /**
+     * Check whether the specified table has the same structure on master and slave.
+     * @return bool - true if the same, false if not.
+     */
+    private function isTableStructureTheSame(string $tableName) : bool
+    {
+        $master_table = new TableConnection($this->m_master, $tableName);
+        $slave_table  = new TableConnection($this->m_slave, $tableName);
+        
+        $masterCreationString = $master_table->fetch_create_table_string();
+        $slaveCreationString  = $slave_table->fetch_create_table_string();
+        
+        # Remove the auto_increment bit which does not affect table structure.
+        $pattern = "%(AUTO_INCREMENT=[0-9]+ )%";
+        $filteredMasterCReationString = preg_replace($pattern, "", $masterCreationString);
+        $filteredSlaveCreationString  = preg_replace($pattern, "", $slaveCreationString);
+        
+        return ($filteredMasterCReationString === $filteredSlaveCreationString);
     }
 }
