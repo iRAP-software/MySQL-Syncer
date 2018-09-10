@@ -34,6 +34,8 @@ If you need to ignore certain tables, you can specify this in the settings file 
 
 
 ## How To Use
+
+### Configure Settings
 There is a template settings file at `src/settings/settings.php.tmpl`. Copy that file and remove the extension to become `src/settings/settings.php`. 
 
 Next, you need to fill in the settings. It is *recommended* that you use a read-only connection for the "current live database" connection details. This is the database that you will want to be syncing **from** rather than to, so there is no need for any permission other than "SELECT". The "local dev database" is the database you will be updating to reflect the "current live database", whilst the "sync database" is a database to be used in order to facilitate the sync. An empty database should be created for this purpose. For speed, you may wish to use a seperate server for this database, but you may find it easier just to add another empty database on the same server as your dev database. 
@@ -44,4 +46,11 @@ You probably want to have an empty array for the `IGNORE_TABLES` setting. Howeve
 
 When tables are a million or more rows large, it can be hard to keep them in sync. Thus the `PARTITIONED_TABLE_DEFINITIONS` was introduced to allow the tool to sync a chunk of the table at a time. This works best when there is an integer column that can represent a chunk of the data within the table, especially if that chunk of data is unlikely to change much. For example if you have a table that is made up of a bunch of "datasets" stuck together, that are each identified by a "dataset_id" integer identifier, then the `dataset_id` would be a perfect column to put here. If such a table was called "dataset_data" then the line to put in the array would be `'dataset_data' => 'dataset_id',`.
 
-After hyou have filled in all of the settings, you can run the tool with `php src/project/main.php`. Eventually the tool will want to run a commands file in parallel to sync the tables in parallel. You will need a JRE installed in order for the tool to automatically run the bundeled `ThreadWrapper.jar` tool to do this. Alternatively, I find it easier to just build a `multiprocess` command within my PATH [using this tutorial](https://blog.programster.org/easily-parallelize-commands-in-linux), and call `multiprocess commands.txt` in order to run this step and be able to see the output.
+### Execution
+After you have filled in all of the settings, you can run the tool with 
+
+```
+php src/project/main.php
+``` 
+
+Eventually the tool will want to run a commands file in parallel to sync the tables in parallel. You will need a JRE installed in order for the tool to automatically run the bundeled `ThreadWrapper.jar` tool to do this. Alternatively, I find it easier to just build a `multiprocess` command within my PATH [using this tutorial](https://blog.programster.org/easily-parallelize-commands-in-linux), and call `multiprocess commands.txt` in order to run this step and be able to see the output.
