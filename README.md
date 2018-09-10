@@ -33,6 +33,12 @@ If you need to ignore certain tables, you can specify this in the settings file 
    * One specifies the name of the table and the column id that a table should be partitioned by. The partitions will be synced as if they were separate tables (e.g. taking the hash of the table and then taking row hashes if the "table hash" is different between master and slave.) A rule of thumb might be that any table over 1 million rows should be considered partitioned.
 
 
+## Requirements
+
+* PHP 7.0+ (CLI)
+* Java (JRE).
+
+
 ## How To Use
 
 ### Configure Settings
