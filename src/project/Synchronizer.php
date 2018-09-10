@@ -78,7 +78,7 @@ class Synchronizer
             
             foreach ($nonPartitionedTables as $table_name)
             {
-                $commands[] = '/usr/bin/php ' . __DIR__ . '/sync_table.php ' . $table_name;
+                $commands[] = '/usr/bin/php ' . __DIR__ . '/sync_table.php ' . $table_name . " || true";
             }
             
             $commands = array_merge($commands, $this->getCommandsForPartitionedTables($partitionedTables));
@@ -154,7 +154,7 @@ class Synchronizer
             
             foreach ($masterPartitions as $partitionValue)
             {
-                $commands[] = "/usr/bin/php " . __DIR__ . "/sync_table_partition.php $partitionedTableName $partitionColumnName '$partitionValue'";
+                $commands[] = "/usr/bin/php " . __DIR__ . "/sync_table_partition.php $partitionedTableName $partitionColumnName '$partitionValue' || true";
             }
             
             foreach ($excessPartitions as $excessPartitionValue)
