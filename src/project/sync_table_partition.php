@@ -1,25 +1,20 @@
 <?php
 
-/* 
+/*
  * Sync part of a table, not the entire thing
  */
 
-if (isset($argv[1]))
-{
+if (isset($argv[1])) {
     $table_name = $argv[1];
-}
-else
-{
+} else {
     die("You need to specify the table name" . PHP_EOL);
 }
 
-if (!isset($argv[2]))
-{
+if (!isset($argv[2])) {
     die("You need to specify the name of the partition column." . PHP_EOL);
 }
 
-if (!isset($argv[3]))
-{
+if (!isset($argv[3])) {
     die("You need to specify the partition column expected value." . PHP_EOL);
 }
 

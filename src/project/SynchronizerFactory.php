@@ -1,6 +1,6 @@
 <?php
 
-/* 
+/*
  * This tiny class is just to allow the main.php and sync_table entrypoint to easily share the
  * same bit of code gracefully.
  */
@@ -12,8 +12,7 @@ class SynchronizerFactory
     
     public static function getSynchronizer()
     {
-        if (self::$s_synchronizer == null)
-        {
+        if (self::$s_synchronizer == null) {
             $startupQueries = array(
                 "SET group_concat_max_len = 18446744073709547520",
                 "SET FOREIGN_KEY_CHECKS=0"
