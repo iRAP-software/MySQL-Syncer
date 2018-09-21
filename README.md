@@ -60,3 +60,19 @@ php src/project/main.php
 ``` 
 
 Eventually the tool will want to run a commands file in parallel to sync the tables in parallel. You will need a JRE installed in order for the tool to automatically run the bundeled `ThreadWrapper.jar` tool to do this. Alternatively, I find it easier to just build a `multiprocess` command within my PATH [using this tutorial](https://blog.programster.org/easily-parallelize-commands-in-linux), and call `multiprocess commands.txt` in order to run this step and be able to see the output.
+
+## Timestamps Issue
+MySQL will default to setting up defaults on timestamps. This means that if your master database has a table like so:
+
+```
+CREATE TABLE `report_filters` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `date_created` timestamp,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5001 DEFAULT CHARSET=utf8
+```
+
+... and you haven't explicitly set `explicit_defaults_for_timestamp` in your mysql configuration file, 
+then whenever you run the sync tool, the table will be dropped and recreated because the structure is different. 
+The structure will continue to be different until you set `explicit_defaults_for_timestamp` in your MySQL config file which we recommend you do. 
+[More info](https://blog.programster.org/mysql-timestamps-automatically-update).
