@@ -45,7 +45,7 @@ class DatabaseConnection
      * return almost immediately.
      * @return Array<String> - list of table names
      */
-    public function fetch_table_names()
+    public function fetchTableNames()
     {
         if ($this->m_table_list === null) {
             $tables = array();
@@ -72,7 +72,7 @@ class DatabaseConnection
      * @param string $query - the query to execute.
      * @return \mysqli_result
      */
-    public function run_query($query)
+    public function runQuery($query)
     {
         $result = true;
         
@@ -92,16 +92,16 @@ class DatabaseConnection
      * @param String $table_name - the name of the table to drop.
      * @return void - throws exception if failed.
      */
-    public function drop_table($table_name)
+    public function dropTable($table_name)
     {
         print "Dropping table " . $table_name . PHP_EOL;
         $query = "DROP TABLE IF EXISTS `" . $table_name . "`";
-        $this->run_query($query);
+        $this->runQuery($query);
     }
     
     
     # Accessors
-    public function get_mysqli()
+    public function getMysqli()
     {
         return $this->m_mysqli_conn;
     }

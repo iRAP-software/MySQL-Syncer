@@ -36,7 +36,11 @@ class SynchronizerFactory
                 $startupQueries
             );
             
-            self::$s_synchronizer = new Synchronizer($masterConnection, $slaveConnection, IGNORE_TABLES);
+            self::$s_synchronizer = new Synchronizer(
+                $masterConnection,
+                $slaveConnection,
+                IGNORE_TABLES
+            );
         }
         
         return self::$s_synchronizer;

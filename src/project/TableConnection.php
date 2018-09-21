@@ -4,7 +4,7 @@ class TableConnection
 {
     private $m_table;
     private $m_columns;
-    private $m_mysqli_conn;
+    private $m_mysqliConn;
     private $m_primary_key;
     
     
@@ -17,10 +17,10 @@ class TableConnection
     public function __construct(DatabaseConnection $conn, $table)
     {
         $this->m_table = $table;
-        $this->m_mysqli_conn = $conn->get_mysqli();
+        $this->m_mysqliConn = $conn->getMysqli();
         
-        $this->fetch_primary_key();
-        $this->fetch_columns();
+        $this->fetchPrimaryKey();
+        $this->fetchColumns();
     }
     
     
@@ -28,15 +28,15 @@ class TableConnection
      * Fetches the rows from the table with the index being the hash and the value being an array
      * that forms the primary key value.
      */
-    public function fetch_hash_map($table_name, $is_master)
+    public function fetchHashMap($table_name, $is_master)
     {
         $syncDb = SiteSpecific::getSyncDb();
         
-        $hash_table_name = ($is_master) ? "master_hashes" : "slave_hashes";
-        $deletion_query = "DELETE FROM `" . $hash_table_name . "` WHERE `table_name`='" . $table_name . "'";
-        $syncDb->query($deletion_query);
+        $hashTableName = ($is_master) ? "master_hashes" : "slave_hashes";
+        $deletionQuery = "DELETE FROM `" . $hashTableName . "` WHERE `table_name`='" . $table_name . "'";
+        $syncDb->query($deletionQuery);
         
-        $wrapped_column_list = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_columns, "`");
+        $wrappedColumnList = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_columns, "`");
         
         $offset = 0;
         
@@ -44,47 +44,47 @@ class TableConnection
             $rows = array();
             
             $sql =
-                "SELECT " . $this->get_primary_key_string() . ", " .
-                "MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . ")) as hash " .
+                "SELECT " . $this->getPrimaryKeyString() . ", " .
+                "MD5( CONCAT_WS('#'," . implode(',', $wrappedColumnList) . ")) as hash " .
                 "FROM `" . $this->m_table . "`" .
                 " LIMIT " . CHUNK_SIZE .
                 " OFFSET " . $offset;
             
-            $result = $this->m_mysqli_conn->query($sql);
+            $result = $this->m_mysqliConn->query($sql);
             
             if ($result === false) {
-                throw new Exception("Failed to select row hashes. " . $sql . PHP_EOL . $this->m_mysqli_conn->error);
+                throw new Exception("Failed to select row hashes. " . $sql . PHP_EOL . $this->m_mysqliConn->error);
             }
             
             while (($row = $result->fetch_assoc()) != null) {
-                $primary_key_value = array();
+                $primaryKeyValue = array();
                 
                 foreach ($this->m_primary_key as $column_name) {
-                    $primary_key_value[] = $row[$column_name];
+                    $primaryKeyValue[] = $row[$column_name];
                 }
                 
-                $primary_key_value_string = implode(",", $primary_key_value);
+                $primaryKeyValueString = implode(",", $primaryKeyValue);
                 
                 $insertion_row = array(
                     'table_name'        => $table_name,
                     'hash'              => $row['hash'],
-                    'primary_key_value' => $primary_key_value_string
+                    'primary_key_value' => $primaryKeyValueString
                 );
                 
                 $rows[] = $insertion_row;
             }
             
             if (count($rows) > 0) {
-                $insertion_query = \iRAP\CoreLibs\MysqliLib::generateBatchInsertQuery(
+                $insertionQuery = \iRAP\CoreLibs\MysqliLib::generateBatchInsertQuery(
                     $rows,
                     ($is_master === true) ? "master_hashes" : "slave_hashes",
                     $syncDb
                 );
                 
-                $insertion_result = $syncDb->query($insertion_query);
+                $insertion_result = $syncDb->query($insertionQuery);
                 
                 if ($insertion_result === false) {
-                    throw new Exception("Failed to insert hash data. " . $syncDb->error . PHP_EOL . $insertion_query);
+                    throw new Exception("Failed to insert hash data. " . $syncDb->error . PHP_EOL . $insertionQuery);
                 }
                 
                 $rows = array();
@@ -99,15 +99,15 @@ class TableConnection
      * Fetches the rows from the table with the index being the hash and the value being an array
      * that forms the primary key value.
      */
-    public function fetch_partition_hash_map($table_name, $is_master, $columnName, $columnValue)
+    public function fetchPartitionHashMap($tableName, $isMaster, $columnName, $columnValue)
     {
         $syncDb = SiteSpecific::getSyncDb();
         
-        $hash_table_name = ($is_master) ? "master_hashes" : "slave_hashes";
-        $deletion_query = "DELETE FROM `" . $hash_table_name . "` WHERE `table_name`='" . $table_name . "' AND `$columnName`='$columnValue'";
+        $hashTableName = ($isMaster) ? "master_hashes" : "slave_hashes";
+        $deletion_query = "DELETE FROM `" . $hashTableName . "` WHERE `table_name`='" . $tableName . "' AND `$columnName`='$columnValue'";
         $syncDb->query($deletion_query);
         
-        $wrapped_column_list = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_columns, "`");
+        $wrappedColumnList = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_columns, "`");
         
         $offset = 0;
         
@@ -115,49 +115,49 @@ class TableConnection
             $rows = array();
             
             $sql =
-                "SELECT " . $this->get_primary_key_string() . ", " .
-                " MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . ")) as hash " .
+                "SELECT " . $this->getPrimaryKeyString() . ", " .
+                " MD5( CONCAT_WS('#'," . implode(',', $wrappedColumnList) . ")) as hash " .
                 " FROM `" . $this->m_table . "`" .
                 " WHERE `" . $columnName . "`='" . $columnValue . "'" .
                 " LIMIT " . CHUNK_SIZE .
                 " OFFSET " . $offset;
             
-            $result = $this->m_mysqli_conn->query($sql);
+            $result = $this->m_mysqliConn->query($sql);
             
             if ($result === false) {
-                throw new Exception("Failed to select row hashes. " . $sql . PHP_EOL . $this->m_mysqli_conn->error);
+                throw new Exception("Failed to select row hashes. " . $sql . PHP_EOL . $this->m_mysqliConn->error);
             }
             
             while (($row = $result->fetch_assoc()) != null) {
-                $primary_key_value = array();
+                $primaryKeyValue = array();
                 
                 foreach ($this->m_primary_key as $column_name) {
-                    $primary_key_value[] = $row[$column_name];
+                    $primaryKeyValue[] = $row[$column_name];
                 }
                 
-                $primary_key_value_string = implode(",", $primary_key_value);
+                $primaryKeyValueString = implode(",", $primaryKeyValue);
                 
                 $insertion_row = array(
-                    'table_name'        => $table_name,
+                    'table_name'        => $tableName,
                     'partition_value'   => md5($columnValue),
                     'hash'              => $row['hash'],
-                    'primary_key_value' => $primary_key_value_string
+                    'primary_key_value' => $primaryKeyValueString
                 );
                 
                 $rows[] = $insertion_row;
             }
             
             if (count($rows) > 0) {
-                $insertion_query = \iRAP\CoreLibs\MysqliLib::generateBatchInsertQuery(
+                $insertionQuery = \iRAP\CoreLibs\MysqliLib::generateBatchInsertQuery(
                     $rows,
-                    ($is_master === true) ? "master_hashes" : "slave_hashes",
+                    ($isMaster === true) ? "master_hashes" : "slave_hashes",
                     $syncDb
                 );
                 
-                $insertion_result = $syncDb->query($insertion_query);
+                $insertion_result = $syncDb->query($insertionQuery);
                 
                 if ($insertion_result === false) {
-                    throw new Exception("Failed to insert hash data. " . $syncDb->error . PHP_EOL . $insertion_query);
+                    throw new Exception("Failed to insert hash data. " . $syncDb->error . PHP_EOL . $insertionQuery);
                 }
                 
                 $rows = array();
@@ -170,30 +170,30 @@ class TableConnection
     
     /**
      * Fetch all the rows that have the specified primary key values
-     * @param Array $primary_key_values - array of keys where each key is an array because keys may
+     * @param Array $primaryKeyValues - array of keys where each key is an array because keys may
      * be formed of multiple columns
      * @return type
      */
-    public function fetch_rows($primary_key_values)
+    public function fetchRows($primaryKeyValues)
     {
         $rows = array();
         
-        if (count($primary_key_values) > 0) {
-            $primary_key_chunks = array_chunk($primary_key_values, CHUNK_SIZE);
+        if (count($primaryKeyValues) > 0) {
+            $primary_key_chunks = array_chunk($primaryKeyValues, CHUNK_SIZE);
             
             foreach ($primary_key_chunks as $primary_key_value_set) {
-                $key_value_sets = array();
+                $keyValueSets = array();
                 
                 foreach ($primary_key_value_set as $index => $set) {
                     $quoted_set = \iRAP\CoreLibs\ArrayLib::wrapElements($set, "'");
-                    $key_value_sets[] = "(" . implode(',', $quoted_set) . ")";
+                    $keyValueSets[] = "(" . implode(',', $quoted_set) . ")";
                 }
                 
                 
                 $sql = "SELECT * FROM `" . $this->m_table . "` " .
-                       "WHERE (" . $this->get_primary_key_string() . ") IN (" . implode(',', $key_value_sets) . ")";
+                       "WHERE (" . $this->getPrimaryKeyString() . ") IN (" . implode(',', $keyValueSets) . ")";
                 
-                $result = $this->m_mysqli_conn->query($sql);
+                $result = $this->m_mysqliConn->query($sql);
                 
                 if ($result === false) {
                     throw new Exception("problem with query: " . $sql);
@@ -215,12 +215,12 @@ class TableConnection
      * @param void
      * @return type
      */
-    public function fetch_all_rows()
+    public function fetchAllRows()
     {
         $rows = array();
          
         $sql = "SELECT * FROM `" . $this->m_table . "`";
-        $result = $this->m_mysqli_conn->query($sql);
+        $result = $this->m_mysqliConn->query($sql);
         
         /* @var $result \mysqli_result */
         while (($row = $result->fetch_assoc()) != null) {
@@ -238,14 +238,14 @@ class TableConnection
      *                        if there are not that many rows left in the table.
      * @return Array - associative array of the results.
      */
-    public function fetch_range($start, $num_rows)
+    public function fetchRange($start, $num_rows)
     {
         $rows = array();
         
         $sql = "SELECT * FROM `" . $this->m_table . "` " .
                "LIMIT " . $num_rows . ' OFFSET ' . $start;
         
-        $result = $this->m_mysqli_conn->query($sql);
+        $result = $this->m_mysqliConn->query($sql);
         
         /* @var $result \mysqli_result */
         while (($row = $result->fetch_assoc()) != null) {
@@ -262,11 +262,11 @@ class TableConnection
      * @return Array - list of all the primary key values (usually this is just an array of one, but since multiple
      *                 values can form the primary key, this could be an array of multiple values)
      */
-    public function fetch_primary_key_values()
+    public function fetchPrimaryKeyValues()
     {
         $values = array();
-        $sql = "SELECT " . $this->get_primary_key_string() . " FROM `" . $this->m_table . "`";
-        $resultSet = $this->m_mysqli_conn->query($sql);
+        $sql = "SELECT " . $this->getPrimaryKeyString() . " FROM `" . $this->m_table . "`";
+        $resultSet = $this->m_mysqliConn->query($sql);
         
         if ($resultSet === false) {
             throw new Exception("query failed: [" . $sql . ']');
@@ -286,7 +286,7 @@ class TableConnection
      * @param Array $rows - assoc array of column names to values to insert.
      * @return void
      */
-    public function insert_rows($rows)
+    public function insertRows($rows)
     {
         print "inserting " . count($rows) . " rows." . PHP_EOL;
         
@@ -297,12 +297,12 @@ class TableConnection
         
         if ($USE_MULTI_QUERY) {
             foreach ($chunks as $row_set) {
-                $multi_query = new iRAP\MultiQuery\MultiQuery($this->m_mysqli_conn);
+                $multi_query = new iRAP\MultiQuery\MultiQuery($this->m_mysqliConn);
                 
                 foreach ($row_set as $row) {
                     $query =
                         "INSERT INTO `" . $this->m_table . "` " .
-                        "SET " . iRAP\CoreLibs\Core::generateMysqliEscapedPairs($row, $this->m_mysqli_conn);
+                        "SET " . iRAP\CoreLibs\Core::generateMysqliEscapedPairs($row, $this->m_mysqliConn);
                     
                     $multi_query->addQuery($query);
                     
@@ -320,7 +320,7 @@ class TableConnection
                 $escaped_keys = array();
                 
                 foreach ($keys as $key) {
-                    $escaped_keys[] = mysqli_escape_string($this->m_mysqli_conn, $key);
+                    $escaped_keys[] = mysqli_escape_string($this->m_mysqliConn, $key);
                 }
                 
                 $quoted_keys = iRAP\CoreLibs\ArrayLib::wrapElements($escaped_keys, '`');
@@ -334,7 +334,7 @@ class TableConnection
                         $escaped_values = array();
                         foreach ($values as $value) {
                             if ($value !== null) {
-                                $escaped_values[] = mysqli_escape_string($this->m_mysqli_conn, $value);
+                                $escaped_values[] = mysqli_escape_string($this->m_mysqliConn, $value);
                             } else {
                                 $escaped_values[] = null;
                             }
@@ -349,10 +349,10 @@ class TableConnection
                         "(" . implode(',', $quoted_keys) . ") " .
                         "VALUES " . implode(',', $value_strings);
                     
-                    $result = $this->run_query($query);
+                    $result = $this->runQuery($query);
                     
                     if ($result === false) {
-                        die("query failed:" . $query . PHP_EOL . $this->m_mysqli_conn->error . PHP_EOL);
+                        die("query failed:" . $query . PHP_EOL . $this->m_mysqliConn->error . PHP_EOL);
                     }
                 }
             }
@@ -364,7 +364,7 @@ class TableConnection
      * Deletes all rows that have the specified primary key values.
      * @param Array $keys - array list of values matching the primary keys of the rows we wish to remove.
      */
-    public function delete_rows($keys)
+    public function deleteRows($keys)
     {
         print "Deleting " . count($keys) . " rows" . PHP_EOL;
         $key_value_sets = array();
@@ -376,10 +376,10 @@ class TableConnection
         
         $sql =
             "DELETE FROM `" . $this->m_table . "` " .
-            "WHERE (" . $this->get_primary_key_string() . ") " .
+            "WHERE (" . $this->getPrimaryKeyString() . ") " .
             "IN (" . implode(',', $key_value_sets) . ")";
         
-        $result = $this->run_query($sql);
+        $result = $this->runQuery($sql);
         
         if ($result === false) {
             throw new Exception("Failed to delete rows. " . $sql);
@@ -399,11 +399,11 @@ class TableConnection
      * @param void
      * @return type
      */
-    public function fetch_create_table_string()
+    public function fetchCreateTableString()
     {
         $query = "SHOW CREATE TABLE `" . $this->m_table . "`";
         
-        $result = $this->m_mysqli_conn->query($query);
+        $result = $this->m_mysqliConn->query($query);
         $first_row = $result->fetch_array();
         $creation_string = $first_row[1]; # the first column is the table name.
         return $this->alphabetizeConstraints($creation_string);
@@ -461,7 +461,7 @@ class TableConnection
      * Reference: http://stackoverflow.com/questions/3102972/mysql-detecting-changes-in-data-with-a-hash-function-over-a-part-of-table
      * @return String $hashValue - the md5 of the entire table of data.
      */
-    public function fetch_table_hash()
+    public function fetchTableHash()
     {
         $tableHash = "";
         
@@ -476,7 +476,7 @@ class TableConnection
             $wrapped_column_list[$index] = "COALESCE(`" . $column . "`, 'NULL')";
         }
         
-        $this->m_mysqli_conn->query("SET group_concat_max_len = 18446744073709547520");
+        $this->m_mysqliConn->query("SET group_concat_max_len = 18446744073709547520");
             
         # do NOT use GROUP_CONCAT here since that has a very small default limit which results in not noticing
         # differences on large tables
@@ -486,13 +486,13 @@ class TableConnection
             "FROM `" . $this->m_table . "`";
         
         /* @var $result mysqli_result */
-        $result = $this->m_mysqli_conn->query($query);
+        $result = $this->m_mysqliConn->query($query);
         
         if ($result !== false) {
             $row = $result->fetch_assoc();
             $tableHash = $row['hash'];
         } else {
-            die("Failed to fetch table hash" . PHP_EOL . $this->m_mysqli_conn->error);
+            die("Failed to fetch table hash" . PHP_EOL . $this->m_mysqliConn->error);
             throw new Exception("Failed to fetch table hash");
         }
         
@@ -507,7 +507,7 @@ class TableConnection
      * Reference: http://stackoverflow.com/questions/3102972/mysql-detecting-changes-in-data-with-a-hash-function-over-a-part-of-table
      * @return String $hashValue - the md5 of the entire table of data.
      */
-    public function fetch_table_partition_hash($columnName, $columnValue)
+    public function fetchTablePartitionHash($columnName, $columnValue)
     {
         $tableHash = "";
         
@@ -522,23 +522,23 @@ class TableConnection
             $wrapped_column_list[$index] = "COALESCE(`" . $column . "`, 'NULL')";
         }
         
-        $this->m_mysqli_conn->query("SET group_concat_max_len = 18446744073709547520");
+        $this->m_mysqliConn->query("SET group_concat_max_len = 18446744073709547520");
             
         # do NOT use GROUP_CONCAT here since that has a very small default limit which results in not noticing
         # differences on large tables
         $query =
             "SELECT MD5( GROUP_CONCAT(MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . ")))) " .
             "AS `hash` " .
-            "FROM `" . $this->m_table . "` WHERE `$columnName`='$columnValue' ORDER BY " . $this->get_primary_key_string();
+            "FROM `" . $this->m_table . "` WHERE `$columnName`='$columnValue' ORDER BY " . $this->getPrimaryKeyString();
         
         /* @var $result mysqli_result */
-        $result = $this->m_mysqli_conn->query($query);
+        $result = $this->m_mysqliConn->query($query);
         
         if ($result !== false) {
             $row = $result->fetch_assoc();
             $tableHash = $row['hash'];
         } else {
-            die("Failed to fetch table hash" . PHP_EOL . $this->m_mysqli_conn->error);
+            die("Failed to fetch table hash" . PHP_EOL . $this->m_mysqliConn->error);
             throw new Exception("Failed to fetch table hash");
         }
         
@@ -553,14 +553,14 @@ class TableConnection
      * @param type $keys
      * @return type
      */
-    public function fetch_row_hashes($keys)
+    public function fetchRowHashes($keys)
     {
         $hashes = array();
         
         $key_sets = array_chunk($keys, 10000);
         
         foreach ($key_sets as $key_set) {
-            $multi_query = new iRAP\MultiQuery\MultiQuery($this->m_mysqli_conn);
+            $multi_query = new iRAP\MultiQuery\MultiQuery($this->m_mysqliConn);
             
             foreach ($key_set as $primaryKeyValue) {
                 $primaryKeyValue     = \iRAP\CoreLibs\ArrayLib::wrapElements($primaryKeyValue, "'");
@@ -570,7 +570,7 @@ class TableConnection
                     "SELECT MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . " ) ) " .
                     "AS `hash` " .
                     "FROM `" . $this->m_table . "` " .
-                    "WHERE (" . $this->get_primary_key_string() . ") = (" . implode(",", $primaryKeyValue) . ")";
+                    "WHERE (" . $this->getPrimaryKeyString() . ") = (" . implode(",", $primaryKeyValue) . ")";
                 
                 $multi_query->addQuery($query);
             }
@@ -596,9 +596,9 @@ class TableConnection
      * @param type $index_values
      * @param type $data_rows
      */
-    public function replace_rows($index_values, $data_rows)
+    public function replaceRows($index_values, $data_rows)
     {
-        $multi_query = new iRAP\MultiQuery\MultiQuery($this->m_mysqli_conn);
+        $multi_query = new iRAP\MultiQuery\MultiQuery($this->m_mysqliConn);
                 
         $key_value_sets = array();
         
@@ -606,7 +606,7 @@ class TableConnection
         foreach ($index_values as $index => $key_set) {
             $escaped_key_set = array();
             foreach ($key_set as $key) {
-                $escaped_key_set[] = mysqli_escape_string($this->m_mysqli_conn, $key);
+                $escaped_key_set[] = mysqli_escape_string($this->m_mysqliConn, $key);
             }
             
             $quoted_set = \iRAP\CoreLibs\ArrayLib::wrapElements($escaped_key_set, "'");
@@ -617,28 +617,28 @@ class TableConnection
         
         $delete_query =
             "DELETE FROM `" . $this->m_table . "` " .
-            "WHERE (" . $this->get_primary_key_string() . ") " .
+            "WHERE (" . $this->getPrimaryKeyString() . ") " .
             "IN (" . implode(",", $key_value_sets) . ")";
         
-        $deletion_result = $this->run_query($delete_query);
+        $deletion_result = $this->runQuery($delete_query);
         
         print "inserting " . count($data_rows) . " replacement rows." . PHP_EOL;
-        $this->insert_rows($data_rows);
+        $this->insertRows($data_rows);
     }
     
     
-    /**fetch_rows
+    /**
      * Dynamically discovers the primary key for this table and sets this objects member variable accordingly.
      * @param void
      * @return void
      */
-    private function fetch_primary_key()
+    private function fetchPrimaryKey()
     {
         $this->m_primary_key = array();
         
         $query = "show index FROM `" . $this->m_table . "`";
         /*@var $result mysqli_result */
-        $result = $this->m_mysqli_conn->query($query);
+        $result = $this->m_mysqliConn->query($query);
         $this->m_primary_key = null;
         
         while (($row = $result->fetch_assoc()) != null) {
@@ -660,10 +660,10 @@ class TableConnection
      * Fetches the names of the columns for this particular table.
      * @return type
      */
-    private function fetch_columns()
+    private function fetchColumns()
     {
         $sql = "SHOW COLUMNS FROM `" . $this->m_table . "`";
-        $result = $this->m_mysqli_conn->query($sql);
+        $result = $this->m_mysqliConn->query($sql);
         
         $this->m_columns = array();
         
@@ -681,7 +681,7 @@ class TableConnection
      * array(group, filter) would become "(`group`, `filter`)"
      * @return type
      */
-    private function get_primary_key_string()
+    private function getPrimaryKeyString()
     {
         $wrapped_elements = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_primary_key, '`');
         $csv = implode(',', $wrapped_elements);
@@ -693,7 +693,7 @@ class TableConnection
      * Returns whether this table has a primary key or not.
      * @return boolean
      */
-    public function has_primary_key()
+    public function hasPrimaryKey() : bool
     {
         $result = true;
         
@@ -705,24 +705,14 @@ class TableConnection
     }
     
     
-    public function getPrimaryKeysForPartition($column, $value)
-    {
-        $query =
-            "SELECT " . $this->get_primary_key_string() .
-            " FROM `" . $this->m_table . "` WHERE `$column`='$value'";
-        
-        
-    }
-    
-    
     /**
      * Fetch the number of rows in the table
      * @return int
      */
-    public function get_num_rows()
+    public function getNumRows()
     {
         $query = "SELECT COUNT(*) FROM `" . $this->m_table . "`";
-        $result = $this->m_mysqli_conn->query($query);
+        $result = $this->m_mysqliConn->query($query);
         /* @var $result \mysqli_result */
         $row = $result->fetch_array(MYSQLI_NUM);
         $result->free();
@@ -737,7 +727,7 @@ class TableConnection
      * @param String $query - the query we want to send.
      * @return - the result from the query (or true if we are executing a "dry run")
      */
-    private function run_query($query)
+    private function runQuery($query)
     {
         $result = true;
         
@@ -746,13 +736,13 @@ class TableConnection
             file_put_contents(LOG_QUERY_FILE, $line, FILE_APPEND);
         }
         
-        $result = $this->m_mysqli_conn->query($query);
+        $result = $this->m_mysqliConn->query($query);
         
         return $result;
     }
     
     # accessors
-    public function get_table_name()
+    public function getTableName()
     {
         return $this->m_table;
     }

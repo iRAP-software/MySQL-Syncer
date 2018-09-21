@@ -37,8 +37,8 @@ class Synchronizer
         
         $num_tables = count($this->m_tables);
         
-        $master_tables = $this->m_master->fetch_table_names();
-        $slave_tables  = $this->m_slave->fetch_table_names();
+        $master_tables = $this->m_master->fetchTableNames();
+        $slave_tables  = $this->m_slave->fetchTableNames();
         
         // Remove tables that match any of the regexps in IGNORE_TABLES
         $master_tables = $this->removeIgnoredTables($master_tables);
@@ -57,13 +57,13 @@ class Synchronizer
         # remove all tables in slave that are not in master.
         print "removing tables that are on the slave which aren't on the master...." . PHP_EOL;
         foreach ($excess_slave_tables as $excess_table) {
-            $this->m_slave->drop_table($excess_table);
+            $this->m_slave->dropTable($excess_table);
         }
         
         # Create the missing tables and directly copy the data from master into slave
         print "Copying missing tables...." . PHP_EOL;
         foreach ($missing_tables as $missing_table) {
-            $this->copy_table($missing_table);
+            $this->copyTable($missing_table);
         }
         
         # Check existing tables to see where they are already the same and only sync the differences.
@@ -95,7 +95,7 @@ class Synchronizer
             
             foreach ($shared_tables as $index => $table_name) {
                 print "syncing $table_name (" . ($index+1) . "/" . $num_tables . ")" . PHP_EOL;
-                $this->sync_table($table_name);
+                $this->syncTable($table_name);
                 print PHP_EOL;
             }
         }
@@ -126,8 +126,8 @@ class Synchronizer
                 // structure is same, sync partitions.
                 $partitionColumnName = PARTITIONED_TABLE_DEFINITIONS[$partitionedTableName];
                 $selectPartitionsQuery = "SELECT DISTINCT(`$partitionColumnName`) FROM `$partitionedTableName`";
-                $masterResult = $this->m_master->run_query($selectPartitionsQuery);
-                $slaveResult = $this->m_slave->run_query($selectPartitionsQuery);
+                $masterResult = $this->m_master->runQuery($selectPartitionsQuery);
+                $slaveResult = $this->m_slave->runQuery($selectPartitionsQuery);
                 
                 if ($masterResult === false || $slaveResult === false) {
                     throw new Exception("Failed to select partition values for $partitionedTableName: $selectPartitionsQuery");
@@ -156,7 +156,7 @@ class Synchronizer
                     print "$partitionedTableName: deleting excess partition {$excessPartitionValue}" . PHP_EOL;
                     $query = "DELETE FROM `{$partitionedTableName}` WHERE `{$partitionColumnName}`='{$excessPartitionValue}'";
                     print "query: $query \n";
-                    $result = $this->m_slave->run_query($query);
+                    $result = $this->m_slave->runQuery($query);
                     
                     if ($result === false) {
                         throw new Exception("Failed to delete excess partition {$excessPartitionValue} on slave");
@@ -175,15 +175,15 @@ class Synchronizer
      * where it can be seen.
      * @param type $table_name
      */
-    public function sync_table($table_name)
+    public function syncTable($table_name)
     {
         print "$table_name: Syncing" . PHP_EOL;
         
         $master_table = new TableConnection($this->m_master, $table_name);
         $slave_table  = new TableConnection($this->m_slave, $table_name);
         
-        $master_creation_string = $master_table->fetch_create_table_string();
-        $slave_creation_string  = $slave_table->fetch_create_table_string();
+        $master_creation_string = $master_table->fetchCreateTableString();
+        $slave_creation_string  = $slave_table->fetchCreateTableString();
         
         # Remove the auto_increment bit which does not affect table structure.
         $pattern = "%(AUTO_INCREMENT=[0-9]+ )%";
@@ -192,19 +192,19 @@ class Synchronizer
         
         if ($master_creation_string_filtered === $slave_creation_string_filtered) {
             # Perform a quick hashsum to see if tables data are already in sync
-            $master_table_hash = $master_table->fetch_table_hash();
-            $slave_table_hash  = $slave_table->fetch_table_hash();
+            $master_table_hash = $master_table->fetchTableHash();
+            $slave_table_hash  = $slave_table->fetchTableHash();
             
             if ($master_table_hash !== $slave_table_hash) {
                 print "$table_name: master table hash !== slave table hash" . PHP_EOL;
                 print "$table_name: [" . $master_table_hash . "] !== [" . $slave_table_hash . "]" . PHP_EOL;
 
-                if ($master_table->has_primary_key()) {
-                    $this->sync_table_data($master_table, $slave_table);
+                if ($master_table->hasPrimaryKey()) {
+                    $this->syncTableData($master_table, $slave_table);
                 } else {
                     if (COPY_TABLES_WITH_NO_PRIMARY) {
                         print "$table_name: WARNING - Cannot sync table as it has no primary key. Fully copying." . PHP_EOL;
-                        $this->copy_table($table_name);
+                        $this->copyTable($table_name);
                     } else {
                         print "$table_name: WARNING - Cannot sync table as it has no primary key. Skipping." . PHP_EOL;
                     }
@@ -215,7 +215,7 @@ class Synchronizer
         } else {
             # Table structures are not the same so perform a direct full copy.
             print "$table_name: Table structure changed so copying table." . PHP_EOL;
-            $this->copy_table($table_name);
+            $this->copyTable($table_name);
         }
         
         print "$table_name: Synced." . PHP_EOL;
@@ -228,15 +228,15 @@ class Synchronizer
      * where it can be seen.
      * @param type $table_name
      */
-    public function sync_table_partition($table_name, $columnName, $expectedColumnValue)
+    public function syncTablePartition($table_name, $columnName, $expectedColumnValue)
     {
         print "$table_name: Syncing partition with value: $expectedColumnValue" . PHP_EOL;
         
         $master_table = new TableConnection($this->m_master, $table_name);
         $slave_table  = new TableConnection($this->m_slave, $table_name);
         
-        $master_creation_string = $master_table->fetch_create_table_string();
-        $slave_creation_string  = $slave_table->fetch_create_table_string();
+        $master_creation_string = $master_table->fetchCreateTableString();
+        $slave_creation_string  = $slave_table->fetchCreateTableString();
         
         # Remove the auto_increment bit which does not affect table structure.
         $pattern = "%(AUTO_INCREMENT=[0-9]+ )%";
@@ -245,15 +245,15 @@ class Synchronizer
         
         if ($master_creation_string_filtered === $slave_creation_string_filtered) {
             # Perform a quick hashsum to see if tables data are already in sync
-            $master_table_hash = $master_table->fetch_table_partition_hash($columnName, $expectedColumnValue);
-            $slave_table_hash  = $slave_table->fetch_table_partition_hash($columnName, $expectedColumnValue);
+            $master_table_hash = $master_table->fetchTablePartitionHash($columnName, $expectedColumnValue);
+            $slave_table_hash  = $slave_table->fetchTablePartitionHash($columnName, $expectedColumnValue);
             
             if ($master_table_hash !== $slave_table_hash) {
                 print "$table_name ($expectedColumnValue): master table partition hash !== slave table partition hash" . PHP_EOL;
                 print "$table_name ($expectedColumnValue): [" . $master_table_hash . "] !== [" . $slave_table_hash . "]" . PHP_EOL;
                 
-                if ($master_table->has_primary_key()) {
-                    $this->sync_table_partition_data(
+                if ($master_table->hasPrimaryKey()) {
+                    $this->syncTablePartitionData(
                         $master_table,
                         $slave_table,
                         $columnName,
@@ -262,7 +262,7 @@ class Synchronizer
                 } else {
                     if (COPY_TABLES_WITH_NO_PRIMARY) {
                         print "$table_name: WARNING - Cannot sync table as it has no primary key. Fully copying." . PHP_EOL;
-                        $this->copy_table($table_name);
+                        $this->copyTable($table_name);
                     } else {
                         print "$table_name: WARNING - Cannot sync table as it has no primary key. Skipping." . PHP_EOL;
                     }
@@ -273,7 +273,7 @@ class Synchronizer
         } else {
             # Table structures are not the same so perform a direct full copy.
             print "$table_name: Table structure changed so copying table." . PHP_EOL;
-            $this->copy_table($table_name);
+            $this->copyTable($table_name);
         }
         
         print "$table_name: Synced." . PHP_EOL;
@@ -316,13 +316,13 @@ class Synchronizer
      * @param String $table_name - the name of the table.
      * @return void.
      */
-    private function copy_table($table_name)
+    private function copyTable($table_name)
     {
         print "$table_name: Fully copying" . PHP_EOL;
         $master_table = new TableConnection($this->m_master, $table_name);
-        $create_table_string = $master_table->fetch_create_table_string();
-        $this->m_slave->drop_table($table_name); # drops it if exists, fine if it doesnt already.
-        $createTableResult = $this->m_slave->run_query($create_table_string);
+        $create_table_string = $master_table->fetchCreateTableString();
+        $this->m_slave->dropTable($table_name); # drops it if exists, fine if it doesnt already.
+        $createTableResult = $this->m_slave->runQuery($create_table_string);
         
         if ($createTableResult === false) {
             print PHP_EOL . $create_table_string . PHP_EOL;
@@ -334,8 +334,8 @@ class Synchronizer
         $num_rows = CHUNK_SIZE;
         $offset = 0;
         
-        while (count(($rows = $master_table->fetch_range($offset, $num_rows))) > 0) {
-            $slave_table->insert_rows($rows);
+        while (count(($rows = $master_table->fetchRange($offset, $num_rows))) > 0) {
+            $slave_table->insertRows($rows);
             $offset += CHUNK_SIZE;
         }
         
@@ -351,22 +351,22 @@ class Synchronizer
      * @param TableConnection $slave_table - the table we are syncing to (destination)
      * @return void.
      */
-    private function sync_table_data(TableConnection $master_table, TableConnection $slave_table)
+    private function syncTableData(TableConnection $master_table, TableConnection $slave_table)
     {
         print "fetching master table hash map..." . PHP_EOL;
-        $master_table->fetch_hash_map($master_table->get_table_name(), true);
+        $master_table->fetchHashMap($master_table->getTableName(), true);
         print "fetching slave table hash map..." . PHP_EOL;
-        $slave_table->fetch_hash_map($master_table->get_table_name(), false);
+        $slave_table->fetchHashMap($master_table->getTableName(), false);
                 
-        $this->delete_excess_rows($slave_table);
-        $this->sync_missing_rows($master_table, $slave_table);
+        $this->deleteExcessRows($slave_table);
+        $this->syncMissingRows($master_table, $slave_table);
         
         # clean up
         $syncDb = SiteSpecific::getSyncDb();
-        $deletion_query = "DELETE FROM `master_hashes` WHERE `table_name`='" . $master_table->get_table_name() . "'";
+        $deletion_query = "DELETE FROM `master_hashes` WHERE `table_name`='" . $master_table->getTableName() . "'";
         $syncDb->query($deletion_query);
         
-        $deletion_query = "DELETE FROM `slave_hashes` WHERE `table_name`='" . $master_table->get_table_name() . "'";
+        $deletion_query = "DELETE FROM `slave_hashes` WHERE `table_name`='" . $master_table->getTableName() . "'";
         $syncDb->query($deletion_query);
     }
     
@@ -379,44 +379,44 @@ class Synchronizer
      * @param TableConnection $slave_table - the table we are syncing to (destination)
      * @return void.
      */
-    private function sync_table_partition_data(
+    private function syncTablePartitionData(
         TableConnection $master_table,
         TableConnection $slave_table,
         $partitionColumn,
         $partitionColumnValue
     ) {
         print "fetching master table hash map..." . PHP_EOL;
-        $master_table->fetch_partition_hash_map(
-            $master_table->get_table_name(),
+        $master_table->fetchPartitionHashMap(
+            $master_table->getTableName(),
             true,
             $partitionColumn,
             $partitionColumnValue
         );
         
         print "fetching slave table hash map..." . PHP_EOL;
-        $slave_table->fetch_partition_hash_map(
-            $master_table->get_table_name(),
+        $slave_table->fetchPartitionHashMap(
+            $master_table->getTableName(),
             false,
             $partitionColumn,
             $partitionColumnValue
         );
         
-        $this->delete_excess_rows($slave_table, $partitionColumnValue);
-        $this->sync_missing_rows($master_table, $slave_table, $partitionColumnValue);
+        $this->deleteExcessRows($slave_table, $partitionColumnValue);
+        $this->syncMissingRows($master_table, $slave_table, $partitionColumnValue);
         
         # clean up
         $syncDb = SiteSpecific::getSyncDb();
         
         $masterHashesDeleteQuery =
             "DELETE FROM `master_hashes`" .
-            " WHERE `table_name`='" . $master_table->get_table_name() . "' " .
+            " WHERE `table_name`='" . $master_table->getTableName() . "' " .
             " AND `partition_value`='" . md5($partitionColumnValue) . "'";
         
         $syncDb->query($masterHashesDeleteQuery);
         
         $slaveHashesDeleteQuery =
             "DELETE FROM `slave_hashes`" .
-            " WHERE `table_name`='" . $master_table->get_table_name() . "'" .
+            " WHERE `table_name`='" . $master_table->getTableName() . "'" .
             " AND `partition_value`='" . md5($partitionColumnValue) . "'";
         
         $syncDb->query($slaveHashesDeleteQuery);
@@ -432,7 +432,7 @@ class Synchronizer
      *                                syncing missing rows for the specified partition value.
      * @throws Exception
      */
-    private function sync_missing_rows(
+    private function syncMissingRows(
         TableConnection $masterTable,
         TableConnection $slaveTable,
         $partitionValue = null
@@ -447,21 +447,21 @@ class Synchronizer
             $query =
                 "SELECT `primary_key_value` FROM `master_hashes` " .
                 "WHERE " .
-                    " `table_name`='" . $slaveTable->get_table_name() . "' " .
+                    " `table_name`='" . $slaveTable->getTableName() . "' " .
                     " AND `partition_value`='" . $md5PartitionValue . "'" .
                     " AND `hash` NOT IN (" .
                         " SELECT `hash` FROM `slave_hashes`" .
-                        " WHERE `table_name`='" . $slaveTable->get_table_name() . "'" .
+                        " WHERE `table_name`='" . $slaveTable->getTableName() . "'" .
                         " AND `partition_value`= '" . $md5PartitionValue . "'" .
                     ")";
         } else {
             $query =
                 "SELECT `primary_key_value` FROM `master_hashes`" .
                 " WHERE " .
-                    " `table_name`='" . $slaveTable->get_table_name() . "'" .
+                    " `table_name`='" . $slaveTable->getTableName() . "'" .
                     " AND `hash` NOT IN (" .
                         " SELECT `hash` FROM `slave_hashes`" .
-                        " WHERE `table_name`='" . $slaveTable->get_table_name() . "'" .
+                        " WHERE `table_name`='" . $slaveTable->getTableName() . "'" .
                     ")";
         }
         
@@ -486,13 +486,13 @@ class Synchronizer
                         // when performing by partition, we need to run an extra delete based on
                         // primarry keys before insert in case the primary key we are going to
                         // insert is already taken in another partition id.
-                        $slaveTable->delete_rows($keysMissingFromSlave);
+                        $slaveTable->deleteRows($keysMissingFromSlave);
                     }
                     
                     # Add missing rows
                     print "inserting " . count($keysMissingFromSlave) . " missing rows" . PHP_EOL;
-                    $missing_rows = $masterTable->fetch_rows($keysMissingFromSlave);
-                    $slaveTable->insert_rows($missing_rows);
+                    $missing_rows = $masterTable->fetchRows($keysMissingFromSlave);
+                    $slaveTable->insertRows($missing_rows);
                     $keysMissingFromSlave = array();
                 }
             }
@@ -502,12 +502,12 @@ class Synchronizer
                     // when performing by partition, we need to run an extra delete based on
                     // primarry keys before insert in case the primary key we are going to
                     // insert is already taken in another partition id.
-                    $slaveTable->delete_rows($keysMissingFromSlave);
+                    $slaveTable->deleteRows($keysMissingFromSlave);
                 }
                 
                 print "inserting " . count($keysMissingFromSlave) . " missing rows" . PHP_EOL;
-                $missing_rows = $masterTable->fetch_rows($keysMissingFromSlave);
-                $slaveTable->insert_rows($missing_rows);
+                $missing_rows = $masterTable->fetchRows($keysMissingFromSlave);
+                $slaveTable->insertRows($missing_rows);
             }
         }
     }
@@ -517,7 +517,7 @@ class Synchronizer
      * Helper function to sync_table_data. This will delete rows in the slave that are not
      * in the master.
      */
-    private function delete_excess_rows(TableConnection $slaveTable, $partitionValue = null)
+    private function deleteExcessRows(TableConnection $slaveTable, $partitionValue = null)
     {
         print "Finding excess rows on slave..." . PHP_EOL;
         
@@ -527,21 +527,21 @@ class Synchronizer
             $query =
                 "SELECT `primary_key_value` FROM `slave_hashes` " .
                 "WHERE" .
-                    " `table_name`='" . $slaveTable->get_table_name() . "'" .
+                    " `table_name`='" . $slaveTable->getTableName() . "'" .
                     " AND `partition_value`='" . md5($partitionValue) . "'" .
                     " AND `hash` NOT IN (" .
                         " SELECT `hash` FROM `master_hashes`" .
-                        " WHERE `table_name`='" . $slaveTable->get_table_name() . "'" .
+                        " WHERE `table_name`='" . $slaveTable->getTableName() . "'" .
                         " AND `partition_value`='" . md5($partitionValue) . "'" .
                     ")";
         } else {
             $query =
                 "SELECT `primary_key_value` FROM `slave_hashes` " .
                 "WHERE" .
-                    " `table_name`='" . $slaveTable->get_table_name() . "'" .
+                    " `table_name`='" . $slaveTable->getTableName() . "'" .
                     " AND `hash` NOT IN (" .
                     " SELECT `hash` FROM `master_hashes` " .
-                    " WHERE `table_name`='" .  $slaveTable->get_table_name() . "' " .
+                    " WHERE `table_name`='" .  $slaveTable->getTableName() . "' " .
                 ")";
         }
         
@@ -561,13 +561,13 @@ class Synchronizer
             
             # Perform a sync of this chunk
             if ($counter % CHUNK_SIZE == 0) {
-                $slaveTable->delete_rows($deletion_keys);
+                $slaveTable->deleteRows($deletion_keys);
                 $deletion_keys = array();
             }
         }
         
         if (count($deletion_keys) > 0) {
-            $slaveTable->delete_rows($deletion_keys);
+            $slaveTable->deleteRows($deletion_keys);
         }
     }
     
@@ -577,7 +577,7 @@ class Synchronizer
      * @param type $arr1
      * @param type $arr2
      */
-    private static function array_set_diff($arr1, $arr2)
+    private static function arraySetDiff($arr1, $arr2)
     {
         $missing_sets = array();
         
@@ -606,7 +606,7 @@ class Synchronizer
      * @param type $array1
      * @param type $array2
      */
-    private static function array_index_diff($array1, $array2)
+    private static function arrayIndexDiff($array1, $array2)
     {
         $indexes = array();
         $flipped_array2 = array_flip($array2); # swaps indexes and values
@@ -628,7 +628,7 @@ class Synchronizer
      * @param type $array1
      * @param type $array2
      */
-    private static function fast_array_diff($array1, $array2)
+    private static function fastArrayDiff($array1, $array2)
     {
         $missing_values = array();
         $flipped_array2 = array_flip($array2); # swaps indexes and values
@@ -652,7 +652,7 @@ class Synchronizer
      * @param type $array2 - array of integers or strings to compare
      * @return type
      */
-    private static function fast_array_intersect($array1, $array2)
+    private static function fastArrayIntersect($array1, $array2)
     {
         $shared_values = array();
         $flipped_array2 = array_flip($array2); # swaps indexes and values
@@ -674,7 +674,7 @@ class Synchronizer
      * @param array $input_array
      * @return type
      */
-    private static function get_hashes(Array $input_array)
+    private static function getHashes(Array $input_array)
     {
         $results = array();
         
@@ -693,7 +693,7 @@ class Synchronizer
      * @param type $haystack - the array we are pulling values from
      * @param type $indexes - array list of keys we want the values of.
      */
-    private static function array_get_values($haystack, Array $indexes)
+    private static function arrayGetValues($haystack, Array $indexes)
     {
         $values = array();
         
@@ -718,8 +718,8 @@ class Synchronizer
         $master_table = new TableConnection($this->m_master, $tableName);
         $slave_table  = new TableConnection($this->m_slave, $tableName);
         
-        $masterCreationString = $master_table->fetch_create_table_string();
-        $slaveCreationString  = $slave_table->fetch_create_table_string();
+        $masterCreationString = $master_table->fetchCreateTableString();
+        $slaveCreationString  = $slave_table->fetchCreateTableString();
         
         # Remove the auto_increment bit which does not affect table structure.
         $pattern = "%(AUTO_INCREMENT=[0-9]+ )%";

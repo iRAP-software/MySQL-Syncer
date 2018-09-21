@@ -21,10 +21,10 @@ class Main
         $deleteSlaveHashesQuery = "DROP TABLE IF EXISTS `slave_hashes`";
         $syncDb->query($deleteSlaveHashesQuery);
         
-        $deletion_query = "DROP TABLE IF EXISTS `master_hashes`";
-        $syncDb->query($deletion_query);
+        $deletionQuery = "DROP TABLE IF EXISTS `master_hashes`";
+        $syncDb->query($deletionQuery);
         
-        $slave_creation_query =
+        $slaveCreationQuery =
             "CREATE TABLE `slave_hashes` (
                 `table_name` varchar(255) NOT NULL DEFAULT '',
                 `partition_value` char(32) DEFAULT NULL,
@@ -35,7 +35,7 @@ class Main
                 KEY `partition_value` (`partition_value`)
             ) ENGINE=InnoDB";
         
-        $createSlaveHashesTableResult = $syncDb->query($slave_creation_query);
+        $createSlaveHashesTableResult = $syncDb->query($slaveCreationQuery);
         
         if ($createSlaveHashesTableResult === false) {
             throw new Exception("Failed to create the slave hash table" . $db->error);

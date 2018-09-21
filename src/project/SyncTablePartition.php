@@ -25,5 +25,5 @@ $columnValue = $argv[3];
 
 require_once(__DIR__ . '/bootstrap.php');
 $syncer = SynchronizerFactory::getSynchronizer();
-$syncer->sync_table_partition($tableName, $columnName, $columnValue);
+$syncer->syncTablePartition($tableName, $columnName, $columnValue);
 
