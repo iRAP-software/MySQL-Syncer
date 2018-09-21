@@ -135,6 +135,7 @@ class Synchronizer
                 
                 $masterPartitions = array();
                 $slavePartitions = array();
+                
                 while (($row = $masterResult->fetch_assoc()) !== null) {
                     $masterPartitions[] = $row[$partitionColumnName];
                 }
@@ -145,13 +146,23 @@ class Synchronizer
                 
                 $excessPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($slavePartitions, $masterPartitions);
                 $missingPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($masterPartitions, $slavePartitions);
+                $sharedPartitions = iRAP\CoreLibs\ArrayLib::fastIntersect($masterPartitions, $slavePartitions);
                 
-                foreach ($masterPartitions as $partitionValue) {
+                if (SYNC_SHARED_PARTITIONS) {
+                    foreach ($sharedPartitions as $partitionValue) {
+                        $commands[] =
+                            "/usr/bin/php " . __DIR__ . "/SyncTablePartition.php " .
+                            "$partitionedTableName $partitionColumnName '$partitionValue' || true";
+                    }
+                }
+                
+                foreach ($missingPartitions as $partitionValue) {
                     $commands[] =
                         "/usr/bin/php " . __DIR__ . "/SyncTablePartition.php " .
                         "$partitionedTableName $partitionColumnName '$partitionValue' || true";
                 }
                 
+                // immediately delete the excess partitions
                 foreach ($excessPartitions as $excessPartitionValue) {
                     print "$partitionedTableName: deleting excess partition {$excessPartitionValue}" . PHP_EOL;
                     $query = "DELETE FROM `{$partitionedTableName}` WHERE `{$partitionColumnName}`='{$excessPartitionValue}'";

@@ -59,3 +59,9 @@ define('IGNORE_TABLES', array(
 define('PARTITIONED_TABLE_DEFINITIONS', array(
     'myTableName'  => 'a_non_unique_int_index',
 ));
+
+
+# set this to false if you wish to skip syncing shared partitions. If you do so then
+# excess partitions on the slave that aren't on master are deleted, and new partitions are 
+# synced down.
+define('SYNC_SHARED_PARTITIONS', true);
