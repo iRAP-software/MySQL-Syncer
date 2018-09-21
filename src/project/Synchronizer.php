@@ -74,7 +74,7 @@ class Synchronizer
             $commands = array();
             
             foreach ($nonPartitionedTables as $table_name) {
-                $commands[] = '/usr/bin/php ' . __DIR__ . '/sync_table.php ' . $table_name . " || true";
+                $commands[] = '/usr/bin/php ' . __DIR__ . '/SyncTable.php ' . $table_name . " || true";
             }
             
             $commands = array_merge($commands, $this->getCommandsForPartitionedTables($partitionedTables));
@@ -121,7 +121,7 @@ class Synchronizer
             // first check structure is the same.
             // If not sync whole table, if it is, sync the partitions.
             if ($this->isTableStructureTheSame($partitionedTableName) === false) {
-                $commands[] = "/usr/bin/php " . __DIR__ . "/sync_table.php {$partitionedTableName} || true";
+                $commands[] = "/usr/bin/php " . __DIR__ . "/SyncTable.php {$partitionedTableName} || true";
             } else {
                 // structure is same, sync partitions.
                 $partitionColumnName = PARTITIONED_TABLE_DEFINITIONS[$partitionedTableName];
@@ -148,7 +148,7 @@ class Synchronizer
                 
                 foreach ($masterPartitions as $partitionValue) {
                     $commands[] =
-                        "/usr/bin/php " . __DIR__ . "/sync_table_partition.php " .
+                        "/usr/bin/php " . __DIR__ . "/SyncTablePartition.php " .
                         "$partitionedTableName $partitionColumnName '$partitionValue' || true";
                 }
                 
