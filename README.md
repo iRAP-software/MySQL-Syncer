@@ -76,3 +76,9 @@ CREATE TABLE `report_filters` (
 then whenever you run the sync tool, the table will be dropped and recreated because the structure is different. 
 The structure will continue to be different until you set `explicit_defaults_for_timestamp` in your MySQL config file which we recommend you do. 
 [More info](https://blog.programster.org/mysql-timestamps-automatically-update).
+
+
+## CodeSniffer
+There is a `phpcs.xml` file within the `src/` directory. 
+After making a change, please [run the codesniffer tool](https://blog.programster.org/getting-started-with-php-codesniffer) to ensure the change 
+adheres to the coding standards.
