@@ -312,7 +312,7 @@ class Synchronizer
     private function removeRegExpsFromArray(array $input, $regExps)
     {
         foreach ($regExps as $regexp) {
-            $pattern = '|' . $regexp . '|';
+            $pattern = '/' . $regexp . '/';
             $input = preg_replace($pattern, '', $input);
         }
         
