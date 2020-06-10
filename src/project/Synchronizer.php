@@ -33,7 +33,7 @@ class Synchronizer
      */
     public function syncDatabase()
     {
-        iRAP\CoreLibs\Filesystem::deleteDir(self::$s_logs_dir);
+        Programster\CoreLibs\Filesystem::deleteDir(self::$s_logs_dir);
 
         $num_tables = count($this->m_tables);
 
@@ -83,7 +83,7 @@ class Synchronizer
             $filepath = __DIR__ . '/commands.txt';
             file_put_contents($filepath, $content);
 
-            $cores = \iRAP\CoreLibs\Core::getNumProcessors();
+            $cores = \Programster\CoreLibs\Core::getNumProcessors();
 
             $command = 'java -jar ' . __DIR__ . '/ThreadWrapper.jar "' . $cores . '" "' . $filepath . '"';
             print "running command: " . PHP_EOL . $command . PHP_EOL;
@@ -144,9 +144,9 @@ class Synchronizer
                     $slavePartitions[] = $row[$partitionColumnName];
                 }
 
-                $excessPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($slavePartitions, $masterPartitions);
-                $missingPartitions = iRAP\CoreLibs\ArrayLib::fastDiff($masterPartitions, $slavePartitions);
-                $sharedPartitions = iRAP\CoreLibs\ArrayLib::fastIntersect($masterPartitions, $slavePartitions);
+                $excessPartitions = Programster\CoreLibs\ArrayLib::fastDiff($slavePartitions, $masterPartitions);
+                $missingPartitions = Programster\CoreLibs\ArrayLib::fastDiff($masterPartitions, $slavePartitions);
+                $sharedPartitions = Programster\CoreLibs\ArrayLib::fastIntersect($masterPartitions, $slavePartitions);
 
                 if (SYNC_SHARED_PARTITIONS) {
                     foreach ($sharedPartitions as $partitionValue) {

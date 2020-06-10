@@ -3,7 +3,6 @@
 class TableConnection
 {
     private $m_table;
-    private $m_columns;
     private $m_mysqliConn;
     private $m_primary_key;
 
@@ -36,7 +35,7 @@ class TableConnection
         $deletionQuery = "DELETE FROM `" . $hashTableName . "` WHERE `table_name`='" . $table_name . "'";
         $syncDb->query($deletionQuery);
 
-        $wrappedColumnList = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_columns, "`");
+        $wrappedColumnList = \Programster\CoreLibs\ArrayLib::wrapElements($this->fetchColumns(), "`");
 
         $offset = 0;
 
@@ -79,7 +78,7 @@ class TableConnection
 
             if (count($rows) > 0)
             {
-                $insertionQuery = \iRAP\CoreLibs\MysqliLib::generateBatchInsertQuery(
+                $insertionQuery = \Programster\MysqliLib\MysqliLib::generateBatchInsertQuery(
                     $rows,
                     ($is_master === true) ? "master_hashes" : "slave_hashes",
                     $syncDb
@@ -112,7 +111,7 @@ class TableConnection
         $deletion_query = "DELETE FROM `" . $hashTableName . "` WHERE `table_name`='" . $tableName . "' AND `$columnName`='$columnValue'";
         $syncDb->query($deletion_query);
 
-        $wrappedColumnList = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_columns, "`");
+        $wrappedColumnList = \Programster\CoreLibs\ArrayLib::wrapElements($this->fetchColumns(), "`");
 
         $offset = 0;
 
@@ -158,7 +157,7 @@ class TableConnection
 
             if (count($rows) > 0)
             {
-                $insertionQuery = \iRAP\CoreLibs\MysqliLib::generateBatchInsertQuery(
+                $insertionQuery = \Programster\MysqliLib\MysqliLib::generateBatchInsertQuery(
                     $rows,
                     ($isMaster === true) ? "master_hashes" : "slave_hashes",
                     $syncDb
@@ -199,11 +198,11 @@ class TableConnection
 
                 foreach ($primary_key_value_set as $index => $set)
                 {
-                    $quoted_set = \iRAP\CoreLibs\ArrayLib::wrapElements($set, "'");
+                    $quoted_set = \Programster\CoreLibs\ArrayLib::wrapElements($set, "'");
                     $keyValueSets[] = "(" . implode(',', $quoted_set) . ")";
                 }
 
-                $sql = "SELECT * FROM `" . $this->m_table . "` " .
+                $sql = "SELECT {$this->fetchNonVirtualColumnsString()} FROM `{$this->m_table}` " .
                        "WHERE (" . $this->getPrimaryKeyString() . ") IN (" . implode(',', $keyValueSets) . ")";
 
                 $result = $this->m_mysqliConn->query($sql);
@@ -225,15 +224,35 @@ class TableConnection
 
 
     /**
+     * Get the string for going in a mysql query for the columns to select that aren't virtual/generated.
+     * @return string - the string for the column names in a query. e.g. `column1`, `column2`, `column2
+     */
+    private function fetchNonVirtualColumnsString() : string
+    {
+        $quotedColumns = Programster\CoreLibs\ArrayLib::wrapElements($this->fetchNonVirtualColumns(), '`');
+        return implode(", ", $quotedColumns);
+    }
+
+
+    /**
      * Fetches all of the data from the database.
      * WARNING - This could potentially be a huge memory hog!
      * @param void
      * @return type
      */
-    public function fetchAllRows()
+    public function fetchAllRows($includingVirtualColumns=false)
     {
         $rows = array();
-        $sql = "SELECT * FROM `" . $this->m_table . "`";
+
+        if ($includingVirtualColumns)
+        {
+            $sql = "SELECT * FROM `{$this->m_table}`";
+        }
+        else
+        {
+            $sql = "SELECT {$this->fetchNonVirtualColumnsString()} FROM `{$this->m_table}`";
+        }
+
         $result = $this->m_mysqliConn->query($sql);
 
         /* @var $result \mysqli_result */
@@ -253,12 +272,21 @@ class TableConnection
      *                        if there are not that many rows left in the table.
      * @return Array - associative array of the results.
      */
-    public function fetchRange($start, $num_rows)
+    public function fetchRange($start, $num_rows, $includingVirtualColumns=false)
     {
         $rows = array();
 
-        $sql = "SELECT * FROM `" . $this->m_table . "` " .
+        if ($includingVirtualColumns)
+        {
+            $sql = "SELECT * FROM `" . $this->m_table . "` " .
                "LIMIT " . $num_rows . ' OFFSET ' . $start;
+        }
+        else
+        {
+            $sql = "SELECT {$this->fetchNonVirtualColumnsString()} FROM `" . $this->m_table . "` " .
+                 "LIMIT " . $num_rows . ' OFFSET ' . $start;
+        }
+
 
         $result = $this->m_mysqliConn->query($sql);
 
@@ -317,15 +345,15 @@ class TableConnection
         {
             foreach ($chunks as $row_set)
             {
-                $multi_query = new iRAP\MultiQuery\MultiQuery($this->m_mysqliConn);
+                $multiQuery = new iRAP\MultiQuery\MultiQuery($this->m_mysqliConn);
 
                 foreach ($row_set as $row)
                 {
                     $query =
-                        "INSERT INTO `" . $this->m_table . "` " .
-                        "SET " . iRAP\CoreLibs\Core::generateMysqliEscapedPairs($row, $this->m_mysqliConn);
+                        "INSERT INTO `{$this->m_table}` " .
+                        "SET " . Programster\CoreLibs\Core::generateMysqliEscapedPairs($row, $this->m_mysqliConn);
 
-                    $multi_query->addQuery($query);
+                    $multiQuery->addQuery($query);
 
                     if (LOG_QUERIES)
                     {
@@ -334,7 +362,7 @@ class TableConnection
                     }
                 }
 
-                $multi_query->run();
+                $multiQuery->run();
             }
         }
         else
@@ -349,7 +377,7 @@ class TableConnection
                     $escaped_keys[] = mysqli_escape_string($this->m_mysqliConn, $key);
                 }
 
-                $quoted_keys = iRAP\CoreLibs\ArrayLib::wrapElements($escaped_keys, '`');
+                $quoted_keys = Programster\CoreLibs\ArrayLib::wrapElements($escaped_keys, '`');
 
                 foreach ($chunks as $row_set)
                 {
@@ -372,7 +400,7 @@ class TableConnection
                             }
                         }
 
-                        $quoted_escaped_values = iRAP\CoreLibs\ArrayLib::mysqliWrapValues($escaped_values);
+                        $quoted_escaped_values = \Programster\MysqliLib\MysqliLib::wrapValues($escaped_values);
                         $value_strings[] = " (" . implode(',', $quoted_escaped_values) . ")";
                     }
 
@@ -404,7 +432,7 @@ class TableConnection
 
         foreach ($keys as $index => $set)
         {
-            $quoted_set = \iRAP\CoreLibs\ArrayLib::wrapElements($set, "'");
+            $quoted_set = \Programster\CoreLibs\ArrayLib::wrapElements($set, "'");
             $key_value_sets[] = "(" . implode(',', $quoted_set) . ")";
         }
 
@@ -432,16 +460,22 @@ class TableConnection
      * ) ENGINE=InnoDB DEFAULT CHARSET=utf8 |
      *
      * @param void
-     * @return type
+     * @return string - the string to create the table.
      */
-    public function fetchCreateTableString()
+    public function fetchCreateTableString() : string
     {
-        $query = "SHOW CREATE TABLE `" . $this->m_table . "`";
+        static $createTableString = null;
 
-        $result = $this->m_mysqliConn->query($query);
-        $first_row = $result->fetch_array();
-        $creation_string = $first_row[1]; # the first column is the table name.
-        return $this->alphabetizeConstraints($creation_string);
+        if ($createTableString === null)
+        {
+            $query = "SHOW CREATE TABLE `" . $this->m_table . "`";
+            $result = $this->m_mysqliConn->query($query);
+            $first_row = $result->fetch_array();
+            $creation_string = $first_row[1]; # the first column is the table name.
+            $createTableString = $this->alphabetizeConstraints($creation_string);
+        }
+
+        return $createTableString;
     }
 
 
@@ -463,10 +497,10 @@ class TableConnection
         {
             $trimmedLine = trim($line);
 
-            if (\iRAP\CoreLibs\StringLib::startsWith($trimmedLine, "CONSTRAINT"))
+            if (\Programster\CoreLibs\StringLib::startsWith($trimmedLine, "CONSTRAINT"))
             {
                 // Strip off commas and re-add them after we have sorted.
-                if (\iRAP\CoreLibs\StringLib::endsWith($line, ","))
+                if (\Programster\CoreLibs\StringLib::endsWith($line, ","))
                 {
                     $line = substr($line, 0, -1);
                 }
@@ -506,7 +540,7 @@ class TableConnection
     public function fetchTableHash()
     {
         $tableHash = "";
-        $columns = $this->m_columns;
+        $columns = $this->fetchColumns();
         $wrapped_column_list = array();
 
         # Using coalesce to prevent null values causing sync issues as raised in the
@@ -554,7 +588,7 @@ class TableConnection
     public function fetchTablePartitionHash($columnName, $columnValue)
     {
         $tableHash = "";
-        $columns = $this->m_columns;
+        $columns = $this->fetchColumns();
         $wrapped_column_list = array();
 
         # Using coalesce to prevent null values causing sync issues as raised in the
@@ -611,8 +645,8 @@ class TableConnection
 
             foreach ($key_set as $primaryKeyValue)
             {
-                $primaryKeyValue     = \iRAP\CoreLibs\ArrayLib::wrapElements($primaryKeyValue, "'");
-                $wrapped_column_list = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_columns, "`");
+                $primaryKeyValue     = \Programster\CoreLibs\ArrayLib::wrapElements($primaryKeyValue, "'");
+                $wrapped_column_list = \Programster\CoreLibs\ArrayLib::wrapElements($this->fetchColumns(), "`");
 
                 $query =
                     "SELECT MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . " ) ) " .
@@ -660,7 +694,7 @@ class TableConnection
                 $escaped_key_set[] = mysqli_escape_string($this->m_mysqliConn, $key);
             }
 
-            $quoted_set = \iRAP\CoreLibs\ArrayLib::wrapElements($escaped_key_set, "'");
+            $quoted_set = \Programster\CoreLibs\ArrayLib::wrapElements($escaped_key_set, "'");
             $key_value_sets[] = "(" . implode(',', $quoted_set) . ")";
         }
 
@@ -686,15 +720,15 @@ class TableConnection
     private function fetchPrimaryKey()
     {
         $this->m_primary_key = array();
-
-        $query = "show index FROM `" . $this->m_table . "`";
+        $query = "show index FROM `{$this->m_table}`";
         /*@var $result mysqli_result */
         $result = $this->m_mysqliConn->query($query);
         $this->m_primary_key = null;
 
         while (($row = $result->fetch_assoc()) != null)
         {
-            if ($row["Key_name"] === "PRIMARY") {
+            if ($row["Key_name"] === "PRIMARY")
+            {
                 $this->m_primary_key[] = $row["Column_name"];
             }
         }
@@ -713,19 +747,63 @@ class TableConnection
      * Fetches the names of the columns for this particular table.
      * @return type
      */
-    private function fetchColumns()
+    private function fetchColumns() : array
     {
-        $sql = "SHOW COLUMNS FROM `" . $this->m_table . "`";
-        $result = $this->m_mysqliConn->query($sql);
+        $columns = null;
 
-        $this->m_columns = array();
-
-        while (($row = $result->fetch_array()) != null)
+        if ($columns === null)
         {
-            $this->m_columns[] = $row[0];
+            $sql = "SHOW COLUMNS FROM `" . $this->m_table . "`";
+            $result = $this->m_mysqliConn->query($sql);
+
+            while (($row = $result->fetch_array()) != null)
+            {
+                $columns[] = $row[0];
+            }
+
+            $result->free();
         }
 
-        $result->free();
+        return $columns;
+    }
+
+
+    /**
+     * Get an array list of the names of the columns that are generated/virtual.
+     */
+    private function fetchVirtualColumns() : array
+    {
+        static $virtualColumns = null;
+
+        if ($virtualColumns === null)
+        {
+            $virtualColumns = array();
+            $sql = "SHOW COLUMNS FROM `{$this->m_table}`";
+            $result = $this->m_mysqliConn->query($sql);
+
+            while (($row = $result->fetch_array()) != null)
+            {
+                if ($row[5] === "VIRTUAL GENERATED" || $row['Extra'] === "VIRTUAL GENERATED")
+                {
+                    $virtualColumns[] = $row[0];
+                }
+            }
+
+            $result->free();
+        }
+
+        return $virtualColumns;
+    }
+
+
+    /**
+     * Get an array list of the names of the columns that are generated/virtual.
+     */
+    private function fetchNonVirtualColumns() : array
+    {
+        $allColumns = $this->fetchColumns();
+        $virtualColumns = $this->fetchVirtualColumns();
+        return array_diff($allColumns, $virtualColumns);
     }
 
 
@@ -737,7 +815,7 @@ class TableConnection
      */
     private function getPrimaryKeyString()
     {
-        $wrapped_elements = \iRAP\CoreLibs\ArrayLib::wrapElements($this->m_primary_key, '`');
+        $wrapped_elements = \Programster\CoreLibs\ArrayLib::wrapElements($this->m_primary_key, '`');
         $csv = implode(',', $wrapped_elements);
         return $csv;
     }
@@ -786,7 +864,8 @@ class TableConnection
     {
         $result = true;
 
-        if (LOG_QUERIES) {
+        if (LOG_QUERIES) 
+        {
             $line = $query . PHP_EOL;
             file_put_contents(LOG_QUERY_FILE, $line, FILE_APPEND);
         }

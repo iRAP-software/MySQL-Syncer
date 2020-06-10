@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2eb17ac0278dad6888a3e7981d3f42a0",
+    "content-hash": "c3dde67cf0fcc9080f33f9d91b30a867",
     "packages": [
         {
             "name": "irap/autoloader",
@@ -47,49 +47,6 @@
             "time": "2017-05-25T13:18:47+00:00"
         },
         {
-            "name": "irap/core-libs",
-            "version": "1.1.45",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/iRAP-software/package-core-libs.git",
-                "reference": "244871d2fbc2f3fac26ff4b98715224953d9befb"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/iRAP-software/package-core-libs/zipball/244871d2fbc2f3fac26ff4b98715224953d9befb",
-                "reference": "244871d2fbc2f3fac26ff4b98715224953d9befb",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.0.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "iRAP\\CoreLibs\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Stuart Page",
-                    "email": "stuart.page@irap-dev.org",
-                    "homepage": "http://irap.org/",
-                    "role": "Developer"
-                }
-            ],
-            "description": "Core libraries for PHP 7.0+",
-            "homepage": "http://www.irap.org",
-            "keywords": [
-                "core",
-                "library"
-            ],
-            "time": "2018-08-15T11:46:14+00:00"
-        },
-        {
             "name": "irap/multi-query",
             "version": "1.0.4",
             "source": {
@@ -130,6 +87,230 @@
                 "mysql"
             ],
             "time": "2017-06-21T11:35:19+00:00"
+        },
+        {
+            "name": "programster/core-libs",
+            "version": "1.7.6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/programster/package-core-libs.git",
+                "reference": "dddeff38dccfc60f85618a71b8e57f7b05ccb6f2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/programster/package-core-libs/zipball/dddeff38dccfc60f85618a71b8e57f7b05ccb6f2",
+                "reference": "dddeff38dccfc60f85618a71b8e57f7b05ccb6f2",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.0",
+                "thecodingmachine/safe": "^1.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Programster\\CoreLibs\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Stuart Page",
+                    "email": "sdpagent@gamail.com",
+                    "homepage": "https://blog.programster.org",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Core libraries for PHP 7.0+",
+            "homepage": "https://github.com/programster/package-core-libs",
+            "keywords": [
+                "core",
+                "library"
+            ],
+            "time": "2020-05-22T13:12:40+00:00"
+        },
+        {
+            "name": "programster/mysqli-lib",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/programster/package-mysqli-lib.git",
+                "reference": "a0531181def591e7c62b2eb3fe97d4a447202aae"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/programster/package-mysqli-lib/zipball/a0531181def591e7c62b2eb3fe97d4a447202aae",
+                "reference": "a0531181def591e7c62b2eb3fe97d4a447202aae",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mysqli": "*",
+                "php": ">=7.2.0"
+            },
+            "require-dev": {
+                "programster/core-libs": "1.7.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Programster\\MysqliLib\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Stuart Page",
+                    "email": "sdpagent@gamail.com",
+                    "homepage": "https://blog.programster.org",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Library for helping out with MySQL databases.",
+            "homepage": "https://github.com/programster/package-mysqli-lib",
+            "keywords": [
+                "library",
+                "mysql"
+            ],
+            "time": "2020-02-24T18:06:18+00:00"
+        },
+        {
+            "name": "thecodingmachine/safe",
+            "version": "v1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thecodingmachine/safe.git",
+                "reference": "04f9ffae372a9816d4472dfb7bcf6126b623a9df"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thecodingmachine/safe/zipball/04f9ffae372a9816d4472dfb7bcf6126b623a9df",
+                "reference": "04f9ffae372a9816d4472dfb7bcf6126b623a9df",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^0.12",
+                "squizlabs/php_codesniffer": "^3.2",
+                "thecodingmachine/phpstan-strict-rules": "^0.12"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.1-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Safe\\": [
+                        "lib/",
+                        "generated/"
+                    ]
+                },
+                "files": [
+                    "generated/apache.php",
+                    "generated/apc.php",
+                    "generated/apcu.php",
+                    "generated/array.php",
+                    "generated/bzip2.php",
+                    "generated/classobj.php",
+                    "generated/com.php",
+                    "generated/cubrid.php",
+                    "generated/curl.php",
+                    "generated/datetime.php",
+                    "generated/dir.php",
+                    "generated/eio.php",
+                    "generated/errorfunc.php",
+                    "generated/exec.php",
+                    "generated/fileinfo.php",
+                    "generated/filesystem.php",
+                    "generated/filter.php",
+                    "generated/fpm.php",
+                    "generated/ftp.php",
+                    "generated/funchand.php",
+                    "generated/gmp.php",
+                    "generated/gnupg.php",
+                    "generated/hash.php",
+                    "generated/ibase.php",
+                    "generated/ibmDb2.php",
+                    "generated/iconv.php",
+                    "generated/image.php",
+                    "generated/imap.php",
+                    "generated/info.php",
+                    "generated/ingres-ii.php",
+                    "generated/inotify.php",
+                    "generated/json.php",
+                    "generated/ldap.php",
+                    "generated/libevent.php",
+                    "generated/libxml.php",
+                    "generated/lzf.php",
+                    "generated/mailparse.php",
+                    "generated/mbstring.php",
+                    "generated/misc.php",
+                    "generated/msql.php",
+                    "generated/mssql.php",
+                    "generated/mysql.php",
+                    "generated/mysqli.php",
+                    "generated/mysqlndMs.php",
+                    "generated/mysqlndQc.php",
+                    "generated/network.php",
+                    "generated/oci8.php",
+                    "generated/opcache.php",
+                    "generated/openssl.php",
+                    "generated/outcontrol.php",
+                    "generated/password.php",
+                    "generated/pcntl.php",
+                    "generated/pcre.php",
+                    "generated/pdf.php",
+                    "generated/pgsql.php",
+                    "generated/posix.php",
+                    "generated/ps.php",
+                    "generated/pspell.php",
+                    "generated/readline.php",
+                    "generated/rpminfo.php",
+                    "generated/rrd.php",
+                    "generated/sem.php",
+                    "generated/session.php",
+                    "generated/shmop.php",
+                    "generated/simplexml.php",
+                    "generated/sockets.php",
+                    "generated/sodium.php",
+                    "generated/solr.php",
+                    "generated/spl.php",
+                    "generated/sqlsrv.php",
+                    "generated/ssdeep.php",
+                    "generated/ssh2.php",
+                    "generated/stats.php",
+                    "generated/stream.php",
+                    "generated/strings.php",
+                    "generated/swoole.php",
+                    "generated/uodbc.php",
+                    "generated/uopz.php",
+                    "generated/url.php",
+                    "generated/var.php",
+                    "generated/xdiff.php",
+                    "generated/xml.php",
+                    "generated/xmlrpc.php",
+                    "generated/yaml.php",
+                    "generated/yaz.php",
+                    "generated/zip.php",
+                    "generated/zlib.php",
+                    "lib/special_cases.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHP core functions that throw exceptions instead of returning FALSE on error",
+            "time": "2020-05-04T15:25:36+00:00"
         }
     ],
     "packages-dev": [],
@@ -138,6 +319,10 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
-    "platform-dev": []
+    "platform": {
+        "php": ">=7.2.0",
+        "ext-mysqli": "*"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
 }

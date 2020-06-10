@@ -1,7 +1,10 @@
 {
     "require": {
-        "irap/core-libs": "1.1.*",
+        "php": ">=7.2.0",
+        "ext-mysqli" : "*",
         "irap/multi-query": "1.0.*",
-        "irap/autoloader": "^1.0"
+        "irap/autoloader": "^1.0",
+        "programster/core-libs": "^1.7",
+        "programster/mysqli-lib": "^1.0"
     }
 }
