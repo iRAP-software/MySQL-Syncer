@@ -1,20 +1,20 @@
 <?php
 
-# CURRENT LIVE DATABASE
+# master/live database
 define('MASTER_DB_NAME', "");
 define('MASTER_DB_HOST', "");
 define('MASTER_DB_USER', "");
 define('MASTER_DB_PASSWORD', "");
 define('MASTER_DB_PORT', 3306);
 
-# local dev database
+# slave/dev database
 define('SLAVE_DB_NAME', "");
 define('SLAVE_DB_HOST', "");
 define('SLAVE_DB_USER', "");
 define('SLAVE_DB_PASSWORD', "");
 define('SLAVE_DB_PORT', 3306);
 
-# sync database (for helping this tool). 
+# sync database (for helping this tool).
 define('SYNC_DB_NAME', "");
 define('SYNC_DB_HOST', "");
 define('SYNC_DB_USER', "");
@@ -62,6 +62,6 @@ define('PARTITIONED_TABLE_DEFINITIONS', array(
 
 
 # set this to false if you wish to skip syncing shared partitions. If you do so then
-# excess partitions on the slave that aren't on master are deleted, and new partitions are 
+# excess partitions on the slave that aren't on master are deleted, and new partitions are
 # synced down.
 define('SYNC_SHARED_PARTITIONS', true);
