@@ -464,17 +464,11 @@ class TableConnection
      */
     public function fetchCreateTableString() : string
     {
-        static $createTableString = null;
-
-        if ($createTableString === null)
-        {
-            $query = "SHOW CREATE TABLE `" . $this->m_table . "`";
-            $result = $this->m_mysqliConn->query($query);
-            $first_row = $result->fetch_array();
-            $creation_string = $first_row[1]; # the first column is the table name.
-            $createTableString = $this->alphabetizeConstraints($creation_string);
-        }
-
+        $query = "SHOW CREATE TABLE `" . $this->m_table . "`";
+        $result = $this->m_mysqliConn->query($query);
+        $first_row = $result->fetch_array();
+        $creation_string = $first_row[1]; # the first column is the table name.
+        $createTableString = $this->alphabetizeConstraints($creation_string);
         return $createTableString;
     }
 
@@ -723,7 +717,7 @@ class TableConnection
         $query = "show index FROM `{$this->m_table}`";
         /*@var $result mysqli_result */
         $result = $this->m_mysqliConn->query($query);
-        $this->m_primary_key = null;
+        $this->m_primary_key = array();
 
         while (($row = $result->fetch_assoc()) != null)
         {
@@ -773,10 +767,6 @@ class TableConnection
      */
     private function fetchVirtualColumns() : array
     {
-        static $virtualColumns = null;
-
-        if ($virtualColumns === null)
-        {
             $virtualColumns = array();
             $sql = "SHOW COLUMNS FROM `{$this->m_table}`";
             $result = $this->m_mysqliConn->query($sql);
@@ -790,7 +780,6 @@ class TableConnection
             }
 
             $result->free();
-        }
 
         return $virtualColumns;
     }
