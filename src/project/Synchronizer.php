@@ -477,7 +477,7 @@ class Synchronizer
         $partitionValue = null
     )
     {
-        print "Finding rows missng from slave.";
+        print "Finding rows missng from slave." . PHP_EOL;
 
         $syncDb = SiteSpecific::getSyncDb();
 
@@ -495,7 +495,9 @@ class Synchronizer
                         " WHERE `table_name`='" . $slaveTable->getTableName() . "'" .
                         " AND `partition_value`= '" . $md5PartitionValue . "'" .
                     ")";
-        } else {
+        }
+        else
+        {
             $query =
                 "SELECT `primary_key_value` FROM `master_hashes`" .
                 " WHERE " .
@@ -606,22 +608,25 @@ class Synchronizer
         $counter = 0;
         $deletion_keys = array();
 
-        while (($row = $result->fetch_assoc()) != null)
+        if ($result->num_rows > 0)
         {
-            $counter++;
-            $deletion_keys[] = explode(",", $row['primary_key_value']);
+            while (($row = $result->fetch_assoc()) != null)
+            {
+                $counter++;
+                $deletion_keys[] = explode(",", $row['primary_key_value']);
 
-            # Perform a sync of this chunk
-            if ($counter % CHUNK_SIZE == 0)
+                # Perform a sync of this chunk
+                if ($counter % CHUNK_SIZE == 0)
+                {
+                    $slaveTable->deleteRows($deletion_keys);
+                    $deletion_keys = array();
+                }
+            }
+
+            if (count($deletion_keys) > 0)
             {
                 $slaveTable->deleteRows($deletion_keys);
-                $deletion_keys = array();
             }
-        }
-
-        if (count($deletion_keys) > 0)
-        {
-            $slaveTable->deleteRows($deletion_keys);
         }
     }
 

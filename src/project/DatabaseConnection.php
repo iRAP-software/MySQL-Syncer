@@ -3,7 +3,6 @@
 class DatabaseConnection
 {
     private $m_mysqli_conn;
-
     private $m_table_list = null;
 
 

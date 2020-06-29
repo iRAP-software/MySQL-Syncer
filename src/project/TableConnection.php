@@ -547,12 +547,11 @@ class TableConnection
 
         $this->m_mysqliConn->query("SET group_concat_max_len = 18446744073709547520");
 
-        # do NOT use GROUP_CONCAT here since that has a very small default limit which results in not noticing
-        # differences on large tables
-        $query =
-            "SELECT MD5( GROUP_CONCAT(MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . ")))) " .
-            "AS `hash` " .
-            "FROM `" . $this->m_table . "`";
+        $subQuery =
+            "SELECT MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . ")) " .
+            "AS `row_hash` FROM `{$this->m_table}`";
+
+        $query = "SELECT MD5(GROUP_CONCAT(row_hash ORDER BY row_hash)) as hash FROM ({$subQuery}) as temp";
 
         /* @var $result mysqli_result */
         $result = $this->m_mysqliConn->query($query);
@@ -595,12 +594,11 @@ class TableConnection
 
         $this->m_mysqliConn->query("SET group_concat_max_len = 18446744073709547520");
 
-        # do NOT use GROUP_CONCAT here since that has a very small default limit which results in not noticing
-        # differences on large tables
-        $query =
-            "SELECT MD5( GROUP_CONCAT(MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . ")))) " .
-            "AS `hash` " .
-            "FROM `" . $this->m_table . "` WHERE `$columnName`='$columnValue' ORDER BY " . $this->getPrimaryKeyString();
+        $subQuery =
+            "SELECT MD5( CONCAT_WS('#'," . implode(',', $wrapped_column_list) . ")) " .
+            "AS `row_hash` FROM `{$this->m_table}` WHERE `$columnName`='$columnValue'";
+
+        $query = "SELECT MD5(GROUP_CONCAT(row_hash ORDER BY row_hash)) as hash FROM ({$subQuery}) as temp";
 
         /* @var $result mysqli_result */
         $result = $this->m_mysqliConn->query($query);
@@ -870,4 +868,3 @@ class TableConnection
         return $this->m_table;
     }
 }
-
