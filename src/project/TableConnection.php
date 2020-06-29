@@ -853,7 +853,7 @@ class TableConnection
     {
         $result = true;
 
-        if (LOG_QUERIES) 
+        if (LOG_QUERIES)
         {
             $line = $query . PHP_EOL;
             file_put_contents(LOG_QUERY_FILE, $line, FILE_APPEND);
