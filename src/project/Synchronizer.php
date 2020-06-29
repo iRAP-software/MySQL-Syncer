@@ -206,7 +206,8 @@ class Synchronizer
             $master_table_hash = $master_table->fetchTableHash();
             $slave_table_hash  = $slave_table->fetchTableHash();
 
-            if ($master_table_hash !== $slave_table_hash) {
+            if ($master_table_hash !== $slave_table_hash)
+            {
                 print "$table_name: master table hash !== slave table hash" . PHP_EOL;
                 print "$table_name: [" . $master_table_hash . "] !== [" . $slave_table_hash . "]" . PHP_EOL;
 
@@ -448,11 +449,12 @@ class Synchronizer
         TableConnection $slaveTable,
         $partitionValue = null
     ) {
-        print "Finding rows missng from slave.";
+        print "Finding rows missng from slave." . PHP_EOL;
 
         $syncDb = SiteSpecific::getSyncDb();
 
-        if ($partitionValue !== null) {
+        if ($partitionValue !== null)
+        {
             $md5PartitionValue = md5($partitionValue);
 
             $query =
@@ -465,7 +467,9 @@ class Synchronizer
                         " WHERE `table_name`='" . $slaveTable->getTableName() . "'" .
                         " AND `partition_value`= '" . $md5PartitionValue . "'" .
                     ")";
-        } else {
+        }
+        else
+        {
             $query =
                 "SELECT `primary_key_value` FROM `master_hashes`" .
                 " WHERE " .
@@ -478,17 +482,20 @@ class Synchronizer
 
         $result = $syncDb->query($query);
 
-        if ($result === false) {
+        if ($result === false)
+        {
             $msg = "Failed to select primary keys in master that arent in slave. " . $syncDb->error;
             throw new Exception($msg);
         }
 
         # Add missing rows
-        if ($result->num_rows > 0) {
+        if ($result->num_rows > 0)
+        {
             $keysMissingFromSlave = array();
             $counter = 0;
 
-            while (($row = $result->fetch_assoc()) != null) {
+            while (($row = $result->fetch_assoc()) != null)
+            {
                 $counter++;
                 $keysMissingFromSlave[] = explode(",", $row['primary_key_value']);
 
@@ -508,7 +515,8 @@ class Synchronizer
                 }
             }
 
-            if (count($keysMissingFromSlave) > 0) {
+            if (count($keysMissingFromSlave) > 0)
+            {
                 if ($partitionValue !== null) {
                     // when performing by partition, we need to run an extra delete based on
                     // primarry keys before insert in case the primary key we are going to
@@ -534,7 +542,8 @@ class Synchronizer
 
         $syncDb = SiteSpecific::getSyncDb();
 
-        if ($partitionValue !== null) {
+        if ($partitionValue !== null)
+        {
             $query =
                 "SELECT `primary_key_value` FROM `slave_hashes` " .
                 "WHERE" .
@@ -545,7 +554,9 @@ class Synchronizer
                         " WHERE `table_name`='" . $slaveTable->getTableName() . "'" .
                         " AND `partition_value`='" . md5($partitionValue) . "'" .
                     ")";
-        } else {
+        }
+        else
+        {
             $query =
                 "SELECT `primary_key_value` FROM `slave_hashes` " .
                 "WHERE" .
@@ -559,26 +570,33 @@ class Synchronizer
 
         $result = $syncDb->query($query);
 
-        if ($result == false) {
+        if ($result == false)
+        {
             throw new Exception("Failed to fetch hashes excess row hashes. " . $syncDb->error);
         }
 
         $counter = 0;
         $deletion_keys = array();
 
-        while (($row = $result->fetch_assoc()) != null) {
-            $counter++;
-            $deletion_keys[] = explode(",", $row['primary_key_value']);
+        if ($result->num_rows > 0)
+        {
+            while (($row = $result->fetch_assoc()) != null)
+            {
+                $counter++;
+                $deletion_keys[] = explode(",", $row['primary_key_value']);
 
-            # Perform a sync of this chunk
-            if ($counter % CHUNK_SIZE == 0) {
-                $slaveTable->deleteRows($deletion_keys);
-                $deletion_keys = array();
+                # Perform a sync of this chunk
+                if ($counter % CHUNK_SIZE == 0)
+                {
+                    $slaveTable->deleteRows($deletion_keys);
+                    $deletion_keys = array();
+                }
             }
-        }
 
-        if (count($deletion_keys) > 0) {
-            $slaveTable->deleteRows($deletion_keys);
+            if (count($deletion_keys) > 0)
+            {
+                $slaveTable->deleteRows($deletion_keys);
+            }
         }
     }
 
