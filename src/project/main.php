@@ -38,7 +38,7 @@ class Main
         $createSlaveHashesTableResult = $syncDb->query($slaveCreationQuery);
         
         if ($createSlaveHashesTableResult === false) {
-            throw new Exception("Failed to create the slave hash table" . $db->error);
+            throw new Exception("Failed to create the slave hash table" . $syncDb->error);
         }
         
         $createMasterHashesTableQuery =
