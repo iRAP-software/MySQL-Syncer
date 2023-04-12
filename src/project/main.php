@@ -28,7 +28,7 @@ class Main
             "CREATE TABLE `slave_hashes` (
                 `table_name` varchar(255) NOT NULL DEFAULT '',
                 `partition_value` char(32) DEFAULT NULL,
-                `primary_key_value` varchar(767) NOT NULL DEFAULT '',
+                `primary_key_value` varchar(500) NOT NULL DEFAULT '',
                 `hash` char(32) DEFAULT NULL,
                 PRIMARY KEY (`table_name`,`primary_key_value`),
                 KEY `hash` (`hash`),
@@ -45,7 +45,7 @@ class Main
             "CREATE TABLE `master_hashes` (
                 `table_name` varchar(255) NOT NULL DEFAULT '',
                 `partition_value` char(32) DEFAULT NULL,
-                `primary_key_value` varchar(767) NOT NULL DEFAULT '',
+                `primary_key_value` varchar(500) NOT NULL DEFAULT '',
                 `hash` char(32) DEFAULT NULL,
                 PRIMARY KEY (`table_name`,`primary_key_value`),
                 KEY `hash` (`hash`),
