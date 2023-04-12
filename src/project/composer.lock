@@ -1,7 +1,7 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
     "content-hash": "2eb17ac0278dad6888a3e7981d3f42a0",
@@ -44,20 +44,24 @@
             "keywords": [
                 "autoloader"
             ],
+            "support": {
+                "issues": "https://github.com/iRAP-software/package-autoloader/issues",
+                "source": "https://github.com/iRAP-software/package-autoloader/tree/master"
+            },
             "time": "2017-05-25T13:18:47+00:00"
         },
         {
             "name": "irap/core-libs",
-            "version": "1.1.45",
+            "version": "1.1.48",
             "source": {
                 "type": "git",
                 "url": "https://github.com/iRAP-software/package-core-libs.git",
-                "reference": "244871d2fbc2f3fac26ff4b98715224953d9befb"
+                "reference": "f5f25a9b0fd9ce8859bcef4930cb510be6754fe3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/iRAP-software/package-core-libs/zipball/244871d2fbc2f3fac26ff4b98715224953d9befb",
-                "reference": "244871d2fbc2f3fac26ff4b98715224953d9befb",
+                "url": "https://api.github.com/repos/iRAP-software/package-core-libs/zipball/f5f25a9b0fd9ce8859bcef4930cb510be6754fe3",
+                "reference": "f5f25a9b0fd9ce8859bcef4930cb510be6754fe3",
                 "shasum": ""
             },
             "require": {
@@ -87,7 +91,10 @@
                 "core",
                 "library"
             ],
-            "time": "2018-08-15T11:46:14+00:00"
+            "support": {
+                "source": "https://github.com/iRAP-software/package-core-libs/tree/1.1.48"
+            },
+            "time": "2022-09-01T15:25:26+00:00"
         },
         {
             "name": "irap/multi-query",
@@ -129,6 +136,9 @@
             "keywords": [
                 "mysql"
             ],
+            "support": {
+                "source": "https://github.com/iRAP-software/package-multi-query/tree/changing-tests"
+            },
             "time": "2017-06-21T11:35:19+00:00"
         }
     ],
@@ -139,5 +149,6 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "2.2.0"
 }
