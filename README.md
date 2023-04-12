@@ -89,11 +89,11 @@ such a table was called "dataset_data" then the line to put in the array would b
 `'dataset_data' => 'dataset_id',`.
 
 ### Execution
-After you have filled in all of the settings, you can run the tool with 
+After you have filled in all of the settings, you can run the tool with
 
-```
+```bash
 php src/project/main.php
-``` 
+```
 
 Eventually the tool will want to run a commands file in parallel to sync the tables in parallel. 
 You will need a JRE installed in order for the tool to automatically run the bundeled 
@@ -106,7 +106,7 @@ command within my PATH
 MySQL will default to setting up defaults on timestamps. This means that if your master database 
 has a table like so:
 
-```
+```mysql
 CREATE TABLE `report_filters` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `date_created` timestamp,
@@ -117,6 +117,6 @@ CREATE TABLE `report_filters` (
 ... and you haven't explicitly set `explicit_defaults_for_timestamp` in your mysql configuration 
 file, then whenever you run the sync tool, the table will be dropped and recreated because the 
 structure is different. The structure will continue to be different until you set 
-`explicit_defaults_for_timestamp` in your MySQL config file which we recommend you do. 
+`explicit_defaults_for_timestamp` in your MySQL config file which we recommend you do.
 [More info](https://blog.programster.org/mysql-timestamps-automatically-update).
 
