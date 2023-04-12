@@ -636,18 +636,20 @@ class TableConnection
     {
         $this->m_primary_key = array();
         
-        $query = "show index FROM `" . $this->m_table . "`";
+        $query = "show index FROM `{$this->m_table}`";
         /*@var $result mysqli_result */
         $result = $this->m_mysqliConn->query($query);
-        $this->m_primary_key = null;
-        
-        while (($row = $result->fetch_assoc()) != null) {
-            if ($row["Key_name"] === "PRIMARY") {
+
+        while (($row = $result->fetch_assoc()) != null)
+        {
+            if ($row["Key_name"] === "PRIMARY")
+            {
                 $this->m_primary_key[] = $row["Column_name"];
             }
         }
         
-        if (count($this->m_primary_key) == 0) {
+        if (count($this->m_primary_key) === 0)
+        {
             $this->m_primary_key = null;
             print "WARNING: " . $this->m_table . " does not have a primary key!" . PHP_EOL;
         }
